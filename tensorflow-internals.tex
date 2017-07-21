@@ -1,0 +1,103 @@
+%%%%%%%%------------------------------------------------------------------------
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+% 
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+% 
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+%%%%%%%%------------------------------------------------------------------------
+%%%% 导言区 
+%% 文档类型为article
+\documentclass[a4paper, 11pt]{book}
+%1m = 39.4 inch
+%大18开 （18.5cm * 23cm)
+%\usepackage[left=3.25cm, right=3.25cm, top=2.3cm,bottom=1.4cm]{geometry}
+\usepackage{geometry}
+\geometry{left=3.75cm,right=3.25cm,top=3cm,bottom=2.5cm}
+
+%% en_preamble包含基本的宏包配置
+\input{style/en_preamble}
+
+%% 如果不写中文的话就不需要引用xecjk_preamble里面的配置
+\input{style/xecjk_preamble}
+
+\input{style/coding}
+
+\usepackage[
+  placement=center,
+  angle=45,
+  scale=4,
+  color=black!40,
+  %hshift=60,
+  %vshift=-5
+]{background}
+
+\backgroundsetup{contents={TensorFlow Internals}}
+%\backgroundsetup{contents={\includegraphics[width=0.2\textwidth]{figures/cock.jpg}}}
+
+\newcommand{\myclearpage}{\clearpage{\pagestyle{empty}\cleardoublepage}}
+
+%%%% 导言区结束
+%%%%%%%%------------------------------------------------------------------------
+
+%%%%%%%%------------------------------------------------------------------------
+%%%% 正文部分
+
+\begin{document}
+\frontmatter
+\pagestyle{empty}
+
+%%自定义封面
+\def\titlename{TensorFlow内核剖析}
+\def\subtitle{TensorFlow Internals}
+\def\authors{刘光聪}
+\def\orgnization{\ascii{ZTE \textcopyright 2014}}
+
+\input{style/title}
+\myclearpage
+
+%\input{contents/foreword}
+%\myclearpage
+
+\input{contents/preface}
+\myclearpage
+
+\tableofcontents
+\myclearpage
+
+\def\thelstlisting{\thechapter-\arabic{lstlisting}}
+%% 中文习惯是设定首行缩进为2em。
+%% 注意此设置一定要在document环境之中，这可能与\setlength作用范围相关
+\setlength{\parindent}{2em}
+
+%%%%%%%%%%%%%%%%%%%%%%
+%%开始正文，页面计数从正文开始
+\mainmatter
+\setcounter{page}{1}
+\pagestyle{fancy}
+
+\input{contents/preface}
+
+%%%%%%%%%%%%%%%%%%%％%%
+\backmatter
+%\listoffigures
+%\myclearpage
+%\listoftables
+%\myclearpage
+
+%\include{contents/appendix}	
+
+% %% 加入参考文献支持
+% \bibliographystyle{alpha}
+% \bibliography{contents/ref}
+
+\end{document}
+%%%% 正文部分结束
+%%%%%%%%------------------------------------------------------------------------

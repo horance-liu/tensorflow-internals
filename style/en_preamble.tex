@@ -1,0 +1,197 @@
+%%%%%%%%------------------------------------------------------------------------
+%%%% 日常所用宏包
+
+%%设置行间距
+\usepackage{setspace}
+
+%% 控制项目列表
+\usepackage{enumerate}
+
+%% 多栏显示
+\usepackage{multicol}
+
+%% hyperref宏包，生成可定位点击的超链接，并且会生成pdf书签
+\usepackage[%
+    pdfstartview=FitH,%
+    CJKbookmarks=true,%
+    bookmarks=true,%
+    bookmarksnumbered=true,%
+    bookmarksopen=true,%
+    colorlinks=true,%
+    citecolor=blue,%
+    linkcolor=blue,%
+    anchorcolor=green,%
+    urlcolor=blue%
+]{hyperref}
+
+%% 控制标题
+\usepackage{titlesec}
+
+%% 控制表格样式
+\usepackage{booktabs}
+
+%% 控制目录
+\usepackage{titletoc}
+
+%% 控制字体大小
+\usepackage{type1cm}
+
+%% 首行缩进，用\noindent取消某段缩进
+\usepackage{indentfirst}
+
+%% 支持彩色文本、底色、文本框等
+\usepackage{color,xcolor}
+
+%% AMS LaTeX宏包
+\usepackage{amsmath}
+
+%% 一些特殊符号
+% \usepackage{bbding}
+
+%% 支持引用
+% \usepackage{cite}
+
+%% LaTeX一些特殊符号宏包
+% \usepackage{latexsym}
+
+%% 数学公式中的黑斜体
+% \usepackage{bm}
+
+%% 调整公式字体大小：\mathsmaller, \mathlarger
+% \usepackage{relsize}
+
+%% 生成索引
+% \makeindex
+
+%%%% 基本插图方法
+%% 图形宏包
+\usepackage{graphicx}
+\usepackage{float}
+%% 如果插入的图片没有指定扩展名，那么依次搜索下面的扩展名所对应的文件
+\DeclareGraphicsExtensions{.pdf,.eps,.png,.jpg}
+%% 让 latex 从 .bb 中读取 Bounding Box 信息
+%\DeclareGraphicsRule{.jpg}{eps}{.bb}{}
+%\DeclareGraphicsRule{.png}{eps}{.bb}{}
+%\DeclareGraphicsRule{.pdf}{eps}{.bb}{}
+
+%% 多个图形并排，参加lnotes.pdf
+%\usepackage{subfig}
+\usepackage{subfigure}
+
+
+\usepackage{caption}
+\captionsetup{font={sf, scriptsize}, labelfont={bf}, skip=15pt}
+\DeclareCaptionLabelSeparator{colon}{~~}
+
+\usepackage[perpage,stable]{footmisc}
+
+\usepackage{longtable}
+% \begin{figure}[htbp]               %% 控制插图位置
+%   \setlength{\abovecaptionskip}{0pt}
+%   \setlength{\belowcaptionskip}{10pt}
+                                     %% 控制图形和上下文的距离
+%   \centering                       %% 使图形居中显示
+%   \includegraphics[width=0.8\textwidth]{CTeXLive2008.jpg}
+                                     %% 控制图形显示宽度为0.8\textwidth
+%   \caption{CTeXLive2008安装过程} \label{fig:CTeXLive2008}
+                                     %% 图形题目和交叉引用标签
+% \end{figure}
+%%%% 基本插图方法结束
+
+%%%% pgf/tikz绘图宏包设置
+\usepackage{pgf,tikz}
+\usetikzlibrary{shapes,automata,snakes,backgrounds,arrows}
+\usetikzlibrary{mindmap, trees,  calendar}
+\usetikzlibrary{positioning}
+\usepackage{pgf-umlsd}
+%% 可以直接在latex文档中使用graphviz/dot语言，
+%% 也可以用dot2tex工具将dot文件转换成tex文件再include进来
+%% \usepackage[shell,pgf,outputdir={docgraphs/}]{dot2texi}
+%%%% pgf/tikz设置结束
+
+
+\input{style/page}
+%%%% fancyhdr设置结束
+
+%%设置行间距离
+\usepackage{framed}  
+%%%% listings宏包设置结束
+
+%%%% 附录设置
+\usepackage[title,titletoc,header]{appendix}
+%%%% 附录设置结束
+
+%%%% 日常宏包设置结束
+%%%%%%%%------------------------------------------------------------------------
+
+%%%%%%%%------------------------------------------------------------------------
+%%%% 英文字体设置结束
+%% 这里可以加入自己的英文字体设置
+%%%%%%%%------------------------------------------------------------------------
+
+%%%%%%%%------------------------------------------------------------------------
+%%%% 设置常用字体字号，与MS Word相对应
+
+%% 一号, 1.4倍行距
+\newcommand{\yihao}{\fontsize{26pt}{36pt}\selectfont}
+%% 二号, 1.25倍行距
+\newcommand{\erhao}{\fontsize{22pt}{28pt}\selectfont}
+%% 小二, 单倍行距
+\newcommand{\xiaoer}{\fontsize{18pt}{18pt}\selectfont}
+%% 三号, 1.5倍行距
+\newcommand{\sanhao}{\fontsize{16pt}{24pt}\selectfont}
+%% 小三, 1.5倍行距
+\newcommand{\xiaosan}{\fontsize{15pt}{22pt}\selectfont}
+%% 四号, 1.5倍行距
+\newcommand{\sihao}{\fontsize{14pt}{21pt}\selectfont}
+%% 半四, 1.5倍行距
+\newcommand{\bansi}{\fontsize{13pt}{19.5pt}\selectfont}
+%% 小四, 1.5倍行距
+\newcommand{\xiaosi}{\fontsize{12pt}{18pt}\selectfont}
+%% 大五, 单倍行距
+\newcommand{\dawu}{\fontsize{11pt}{11pt}\selectfont}
+%% 五号, 单倍行距
+\newcommand{\wuhao}{\fontsize{10.5pt}{10.5pt}\selectfont}
+%%%%%%%%------------------------------------------------------------------------
+
+%%%%%%%%------------------------------------------------------------------------
+%%%% 一些个性设置
+
+%% 设定页码方式，包括arabic、roman等方式
+%% \pagenumbering{arabic}
+
+%% 有时LaTeX无从断行，产生overfull的错误，这条命令降低LaTeX断行标准
+%% \sloppy
+
+%% 设定目录显示深度\tableofcontents
+%% \setcounter{tocdepth}{2}
+%% 设定\listoftables显示深度
+%% \setcounter{lotdepth}{2}
+%% 设定\listoffigures显示深度
+%% \setcounter{lofdepth}{2}
+
+%% 中文破折号，据说来自清华模板
+\newcommand{\pozhehao}{\kern0.3ex\rule[0.8ex]{2em}{0.1ex}\kern0.3ex}
+
+%% 设定itemize环境item的符号
+\renewcommand{\labelitemi}{$\bullet$}
+
+%\makeatletter
+%\@addtoreset{lstlisting}{section} 
+%\makeatother
+
+\input{style/command}
+%% 设定正文字体大小
+% \renewcommand{\normalsize}{\sihao}
+
+%%%% 个性设置结束
+%%%%%%%%------------------------------------------------------------------------
+
+
+%%%%%%%%------------------------------------------------------------------------
+%%%% bibtex设置
+
+%% 设定参考文献显示风格
+
+%%%% bibtex设置结束
+%%%%%%%%------------------------------------------------------------------------

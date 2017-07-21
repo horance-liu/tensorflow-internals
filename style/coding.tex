@@ -1,0 +1,114 @@
+%%%% 设置listings宏包用来粘贴源代码
+%% 方便粘贴源代码，部分代码高亮功能
+\usepackage{listings}
+\usepackage{color}
+
+\DeclareCaptionFont{red}{\color{red}}
+
+%% 所要粘贴代码的编程语言
+\lstloadlanguages{{[LaTeX]TeX}, {[ISO]C++}, {Java}, {Ruby}, {Python}}
+
+%% 设置listings宏包的一些全局样式
+%% 参考http://hi.baidu.com/shawpinlee/blog/item/9ec431cbae28e41cbe09e6e4.html
+\lstset{
+numberbychapter=true,
+breakatwhitespace=true,
+showstringspaces=false,              %% 设定是否显示代码之间的空格符号
+basicstyle=\scriptsize\ttfamily,           %% 设定字体大小\tiny, \small, \Large等等
+keywordstyle=\bfseries,
+commentstyle=\color{red!50!green!50!blue!50},                           
+escapechar=`,                        %% 中文逃逸字符，用于中英混排
+xleftmargin=1.5em,xrightmargin=0em, aboveskip=1em,
+breaklines,                          %% 这条命令可以让LaTeX自动将长的代码行换行排版
+extendedchars=false,                 %% 这一条命令可以解决代码跨页时，章节标题，页眉等汉字不显示的问题
+frameround=fttt,
+captionpos=top,
+belowcaptionskip=1em
+}
+
+\lstdefinestyle{numbers}{
+   numbers=left,
+   numberstyle=\tiny,
+   stepnumber=1,
+   numbersep=1em
+}
+
+\lstdefinestyle{C++}{
+   language=C++,
+   texcl=true,
+   prebreak=\textbackslash,
+   breakindent=1em,
+   keywordstyle=\bfseries, %% 关键字高亮
+   morekeywords={alignas, alignof, char16_t, char32_t, constexpr, decltype, noexcept, nullptr, static_assert, thread_local, override, OVERRIDE, INTERFACE, ABSTRACT, DEFINE_ROLE, ROLE, HAS_ROLE, USE_ROLE}
+   style=numbers,
+   %frame=leftline,                     %% 给代码加框
+   %framerule=2pt,
+   %rulesep=5pt
+}
+
+\lstnewenvironment{c++}[1][]
+  {\setstretch{1}
+  \lstset{style=C++, #1}}
+  {}
+
+%\captionsetup[lstlisting]{textfont=red}
+%{labelfont=bf, singlelinecheck=off, labelsep=space, textfont=red}
+
+\lstdefinestyle{Java}{
+   language=Java,
+   texcl=true,
+   prebreak=\textbackslash,
+   breakindent=1em,
+   keywordstyle=\bfseries, %% 关键字高亮
+   morekeywords={}
+   style=numbers,
+   %frame=leftline,                     %% 给代码加框
+   %framerule=2pt,
+   %rulesep=5pt
+}
+
+\lstnewenvironment{java}[1][]
+  {\setstretch{1}
+  \lstset{style=Java, #1}}
+  {}
+
+\lstdefinestyle{Ruby}{
+   language=Java,
+   texcl=true,
+   prebreak=\textbackslash,
+   breakindent=1em,
+   keywordstyle=\bfseries, %% 关键字高亮
+   morekeywords={}
+   style=numbers,
+   %frame=leftline,                     %% 给代码加框
+   %framerule=2pt,
+   %rulesep=5pt
+}
+
+\lstnewenvironment{ruby}[1][]
+  {\setstretch{1}
+  \lstset{style=Ruby, #1}}
+  {}
+
+\lstdefinestyle{Python}{
+   language=Python,
+   texcl=true,
+   prebreak=\textbackslash,
+   breakindent=1em,
+   keywordstyle=\bfseries, %% 关键字高亮
+   morekeywords={}
+   style=numbers,
+   %frame=leftline,                     %% 给代码加框
+   %framerule=2pt,
+   %rulesep=5pt
+}
+
+\lstnewenvironment{python}[1][]
+  {\setstretch{1}
+  \lstset{style=Python, #1}}
+  {}
+
+\renewcommand{\lstlistingname}{示例代码}
+\renewcommand\thefigure{\thechapter-\arabic{figure}}
+
+\newcommand\refcode[1]{{\itshape \lstlistingname\ascii{\ref{code:#1}（第\pageref{code:#1}页）}}}

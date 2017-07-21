@@ -1,0 +1,50 @@
+
+\newlength{\centeroffset}
+\setlength{\centeroffset}{-0.5\oddsidemargin}
+\addtolength{\centeroffset}{0.5\evensidemargin}
+\thispagestyle{empty}
+
+% \begin{tikzpicture}
+%   \path[mindmap,concept color=black,text=white]
+%     node[concept] {\ascii{Programming}}
+%     [clockwise from=0]
+%     child[concept color=green!50!black] {
+%       node[concept] {\ascii{XP}}
+%       [clockwise from=90]
+%       child { node[concept] {\ascii{Simple Design}} }
+%       child { node[concept] {\ascii{TDD}} }
+%       child { node[concept] {\ascii{Refactoring}} }
+%       child { node[concept] {\ascii{Pair Programming}} }
+%     }
+%     child[concept color=blue] {
+%       node[concept] {\ascii{Oriented-Object}}
+%       [clockwise from=-30]
+%       child { node[concept] {\ascii{C++}} }
+%       child { node[concept] {\ascii{Java}} }
+%     }
+%     child[concept color=red]
+%     { node[concept] {\ascii{Evolutionary Design}} }
+%     child[concept color=orange]
+%     { node[concept] {\ascii{Clean Code}} };
+%  \end{tikzpicture}
+
+%title and subtitle
+\vspace*{\stretch{1}}
+\noindent\hspace*{\centeroffset}\makebox[0pt][l]{\begin{minipage}{\textwidth}
+\flushright
+{\Huge \hei \bfseries \titlename}
+\noindent\rule[-1ex]{\textwidth}{5pt}\\[2.5ex]
+\hfill\emph{\subtitle}
+\end{minipage}}
+
+%author
+\vspace{\stretch{2}}
+\noindent\hspace*{\centeroffset}\makebox[0pt][l]{\begin{minipage}{\textwidth}
+\center
+{\bfseries \authors} \\[1.5ex]
+{\bfseries \orgnization}
+\end{minipage}}
+
+\vspace{\stretch{1}}
+
+\pagebreak
