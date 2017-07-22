@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.14159265-2.6-0.99996 (TeX Live 2016) (preloaded format=xelatex 2016.9.28)  21 JUL 2017 17:31
+This is XeTeX, Version 3.14159265-2.6-0.99996 (TeX Live 2016) (preloaded format=xelatex 2016.9.28)  23 JUL 2017 05:46
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -8,8 +8,8 @@ LaTeX2e <2016/03/31>
 Babel <3.9r> and hyphenation patterns for 83 language(s) loaded.
 (/usr/local/texlive/2016/texmf-dist/tex/latex/base/book.cls
 Document Class: book 2014/09/29 v1.4h Standard LaTeX document class
-(/usr/local/texlive/2016/texmf-dist/tex/latex/base/bk11.clo
-File: bk11.clo 2014/09/29 v1.4h Standard LaTeX file (size option)
+(/usr/local/texlive/2016/texmf-dist/tex/latex/base/bk10.clo
+File: bk10.clo 2014/09/29 v1.4h Standard LaTeX file (size option)
 )
 \c@part=\count79
 \c@chapter=\count80
@@ -2025,14 +2025,7 @@ Package: xeCJK-listings 2016/05/14 v3.4.0 xeCJK patch file for listings
 \l__xeCJK_listings_max_char_int=\count314
 \l__xeCJK_listings_flag_int=\count315
 )
-(output/tensorflow-internals.aux
-
-LaTeX Warning: Label `ch:preface' multiply defined.
-
-
-LaTeX Warning: Label `tbl:regulation-tbl' multiply defined.
-
-)
+(output/tensorflow-internals.aux)
 \openout1 = `tensorflow-internals.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 53.
@@ -2055,7 +2048,8 @@ LaTeX Font Info:    Checking defaults for EU1/lmr/m/n on input line 53.
 LaTeX Font Info:    ... okay on input line 53.
 LaTeX Font Info:    Checking defaults for T3/cmr/m/n on input line 53.
 LaTeX Font Info:    Try loading font information for T3+cmr on input line 53.
- (/usr/local/texlive/2016/texmf-dist/tex/latex/tipa/t3cmr.fd
+
+(/usr/local/texlive/2016/texmf-dist/tex/latex/tipa/t3cmr.fd
 File: t3cmr.fd 2001/12/31 TIPA font definitions
 )
 LaTeX Font Info:    ... okay on input line 53.
@@ -2076,15 +2070,15 @@ LaTeX Font Info:    ... okay on input line 53.
 * \textheight=688.5567pt
 * \oddsidemargin=34.42784pt
 * \evensidemargin=20.20146pt
-* \topmargin=-18.78552pt
+* \topmargin=-16.97922pt
 * \headheight=15.0pt
-* \headsep=19.8738pt
-* \topskip=11.0pt
-* \footskip=27.46295pt
-* \marginparwidth=106.0pt
+* \headsep=18.06749pt
+* \topskip=10.0pt
+* \footskip=25.29494pt
+* \marginparwidth=115.0pt
 * \marginparsep=7.0pt
 * \columnsep=10.0pt
-* \skip\footins=10.0pt plus 4.0pt minus 2.0pt
+* \skip\footins=9.0pt plus 4.0pt minus 2.0pt
 * \hoffset=0.0pt
 * \voffset=0.0pt
 * \mag=1000
@@ -2272,50 +2266,50 @@ LaTeX Font Info:    Font shape `T1/pbk/b/n' in size <20.74> not available
 (Font)              Font shape `T1/pbk/db/n' tried instead on input line 1.
 LaTeX Font Info:    Font shape `T1/pbk/b/n' in size <100> not available
 (Font)              Font shape `T1/pbk/db/n' tried instead on input line 1.
+ [3
 
-Underfull \hbox (badness 10000) in alignment at lines 29--29
+]
+
+LaTeX Font Warning: Font shape `EU1/phv/m/it' undefined
+(Font)              using `EU1/phv/m/n' instead on input line 55.
+
+
+Underfull \hbox (badness 10000) in alignment at lines 68--68
 [][]
  []
 
-(/usr/local/texlive/2016/texmf-dist/tex/latex/listings/lstlang1.sty
-File: lstlang1.sty 2015/06/04 1.6 listings language file
-)
-(/usr/local/texlive/2016/texmf-dist/tex/latex/listings/lstmisc.sty
-File: lstmisc.sty 2015/06/04 1.6 (Carsten Heinz)
-)
-Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on i
-nput line 43.
-
-
-LaTeX Font Warning: Font shape `EU1/Monaco(0)/bx/n' undefined
-(Font)              using `EU1/Monaco(0)/m/n' instead on input line 44.
-
-[3
-
-] [4]) [5] [6
-
-
-] (output/tensorflow-internals.toc)
+) [4] (output/tensorflow-internals.toc)
 \tf@toc=\write5
 \openout5 = `tensorflow-internals.toc'.
 
- [7
-
-] [8
+ [5
 
 
-]
-(./contents/preface.tex
+
+] [6
+
+
+] (./contents/introduction.tex
+LaTeX Font Info:    Font shape `EU1/LucidaBright(0)/m/sl' in size <8> not avail
+able
+(Font)              Font shape `EU1/LucidaBright(0)/m/it' tried instead on inpu
+t line 1.
+
+
+LaTeX Font Warning: Font shape `EU1/phv/m/sl' undefined
+(Font)              using `EU1/phv/m/n' instead on input line 2.
+
 Chapter 1.
-
-Underfull \hbox (badness 10000) in alignment at lines 29--29
-[][]
- []
-
 [1
 
 
 ]
+File: figures/parameter-server.png Graphic file (type QTm)
+ <use  "figures/parameter-server.png" >
+
+LaTeX Font Warning: Font shape `EU1/Monaco(0)/m/it' undefined
+(Font)              using `EU1/Monaco(0)/m/n' instead on input line 72.
+
 .................................................
 . fontspec info: "defining-font"
 . 
@@ -2334,38 +2328,180 @@ Underfull \hbox (badness 10000) in alignment at lines 29--29
 . Std/OT:script=hani;language=DFLT;embolden=4;slant=0.167;"
 . - 'bold italic small caps'  (bx/itsc) with NFSS spec.: 
 .................................................
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.94 
+     
+? R
+OK, entering \nonstopmode...
+[2]
+File: figures/tf-dataflow.png Graphic file (type QTm)
+ <use  "figures/tf-dataflow.png" > [3]
+File: figures/tf-commits.png Graphic file (type QTm)
+ <use  "figures/tf-commits.png" >
+File: figures/tf-versions.png Graphic file (type QTm)
+
+<use  "figures/tf-versions.png" >
+Underfull \vbox (badness 1057) has occurred while \output is active []
+
 
 ! Illegal unit of measure (pt inserted).
 <to be read again> 
                    \relax 
-l.126 \begin{leftbar}
-                     
-? R
-OK, entering \nonstopmode...
-[2]) [3] [4
+l.181 
+      
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[4]
+File: figures/tf-google-apps.png Graphic file (type QTm)
+ <use  "figures/tf-google-apps.png" >) (./contents/architecture.tex [5]
+[6
 
 ]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 101.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 101.
+Chapter 2.
+File: figures/tf-architecture.png Graphic file (type QTm)
+<use  "figures/tf-architecture.png" >
+Underfull \vbox (badness 1460) has occurred while \output is active []
+
+ [7]
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.66 
+     
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[8]
+File: figures/tf-1ps-1worker.png Graphic file (type QTm)
+ <use  "figures/tf-1ps-1worker.png" >
+File: figures/tf-graph-construction.png Graphic file (type QTm)
+
+<use  "figures/tf-graph-construction.png" >
+! Extra }, or forgotten \endgroup.
+\@endfloatbox ...pagefalse \outer@nobreak \egroup 
+                                                  \color@endbox 
+l.113 \end{figure}
+                  
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+
+Underfull \vbox (badness 5245) has occurred while \output is active []
+
+ [9]
+File: figures/tf-graph-execution.png Graphic file (type QTm)
+
+<use  "figures/tf-graph-execution.png" >
+! Extra }, or forgotten \endgroup.
+\@endfloatbox ...pagefalse \outer@nobreak \egroup 
+                                                  \color@endbox 
+l.126 \end{figure}
+                  
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.126 \end{figure}
+                  
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[10]
+File: figures/tf-graph-split-by-task.png Graphic file (type QTm)
+ <use  "figures/tf-graph-split-by-task.png" >
+! Extra }, or forgotten \endgroup.
+\@endfloatbox ...pagefalse \outer@nobreak \egroup 
+                                                  \color@endbox 
+l.137 \end{figure}
+                  
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+[11]
+File: figures/tf-register-graph.png Graphic file (type QTm)
+ <use  "figures/tf-register-graph.png" >
+! Extra }, or forgotten \endgroup.
+\@endfloatbox ...pagefalse \outer@nobreak \egroup 
+                                                  \color@endbox 
+l.152 \end{figure}
+                  
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+File: figures/tf-run-graph.png Graphic file (type QTm)
+<use  "figures/tf-run-graph.png" >
+! Extra }, or forgotten \endgroup.
+\@endfloatbox ...pagefalse \outer@nobreak \egroup 
+                                                  \color@endbox 
+l.163 \end{figure}
+                  
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+)
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.90 \backmatter
+                
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[12]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 102.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 102.
  (output/tensorflow-internals.aux)
-Package atveryend Info: Empty hook `AtVeryEndDocument' on input line 101.
-Package atveryend Info: Empty hook `AtEndAfterFileList' on input line 101.
+Package atveryend Info: Empty hook `AtVeryEndDocument' on input line 102.
+Package atveryend Info: Empty hook `AtEndAfterFileList' on input line 102.
 
 
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
-
-LaTeX Warning: There were multiply-defined labels.
-
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 101.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 102.
  ) 
 Here is how much of TeX's memory you used:
- 42985 strings out of 493591
- 860482 string characters out of 6143546
- 942422 words of memory out of 5000000
- 45698 multiletter control sequences out of 15000+600000
- 9527 words of font info for 77 fonts, out of 8000000 for 9000
+ 42878 strings out of 493591
+ 868082 string characters out of 6143546
+ 913412 words of memory out of 5000000
+ 45570 multiletter control sequences out of 15000+600000
+ 6656 words of font info for 78 fonts, out of 8000000 for 9000
  1347 hyphenation exceptions out of 8191
- 60i,11n,121p,10418b,962s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 53i,12n,82p,10418b,793s stack positions out of 5000i,500n,10000p,200000b,80000s
 
-Output written on output/tensorflow-internals.pdf (12 pages).
+Output written on output/tensorflow-internals.pdf (18 pages).
