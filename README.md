@@ -1,16 +1,16 @@
-# C++ Programming Style: Guilds, Rules, and Patterns.
+# TensorFlow Internals.
 
 Licensed under [MIT License][].
 
 ## Download PDF
 
 ```bash
-$ wget -c https://raw.github.com/ccock/cps/master/cpp-programming-style.pdf
+$ wget -c https://raw.github.com/horance-liu/tensorflow-internals/master/tensorflow-internals.pdf
 ```
 
 ## Downloads
 
-You can obtain full latex source files of C++ Programming Style from [https://github.com/ccock/cps](https://github.com/ccock/cps)
+You can obtain full latex source files of C++ Programming Style from [https://github.com/horance-liu/tensorflow-internals](https://github.com/horance-liu/tensorflow-internals)
 
 ## Install Tex
 
@@ -66,7 +66,7 @@ $ make
 ## Preview PDF
 
 ```bash
-$ open output/cpp-programming-style.pdf
+$ open output/tensorflow-internals.pdf
 ```
 
 ## License
