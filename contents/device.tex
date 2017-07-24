@@ -1,0 +1,230 @@
+\begin{savequote}[45mm]
+\ascii{Any fool can write code that a computer can understand. Good programmers write code that humans can understand.}
+\qauthor{\ascii{- Martin Flower}}
+\end{savequote}
+
+\chapter{设备} 
+\label{ch:device}
+
+\begin{content}
+
+\end{content}
+
+\section{设备规范}
+
+\begin{content}
+
+设备规范\ascii{(Device Specification)}用于描述\ascii{OP}存储或计算设备的具体位置。
+
+\subsection{形式化}
+
+一个设备规范可以形式化地描述为：
+
+\begin{leftbar}
+\begin{python}
+DEVICE_SPEC ::= COLOCATED_NODE | PARTIAL_SPEC
+COLOCATED_NODE ::= "@" NODE_NAME
+PARTIAL_SPEC ::= ("/" CONSTRAINT) *
+CONSTRAINT ::= ("job:" JOB_NAME)
+             | ("replica:" [1-9][0-9]*)
+             | ("task:" [1-9][0-9]*)
+             | ( ("gpu" | "cpu") ":" ([1-9][0-9]* | "*") )
+\end{python}
+\end{leftbar}
+
+\subsubsection{完整指定}
+
+如下例所示，完整地描述某个\ascii{OP}被放置在\ascii{PS}作业，\ascii{0}号备份，\ascii{0}号任务，\ascii{GPU 0}号设备。
+
+\begin{leftbar}
+\begin{python}
+/job:ps/replica:0/task:0/device:GPU:0
+\end{python}
+\end{leftbar}
+
+\subsubsection{部分指定}
+
+设备规范也可以部分指定，甚至为空。例如，下例仅描述了\ascii{GPU}的\ascii{0}号设备。
+
+\begin{leftbar}
+\begin{python}
+/device:GPU:0
+\end{python}
+\end{leftbar}
+
+特殊地，当设备规范为空时，则表示对\ascii{OP}未实施设备约束，运行时自动选择设备放置\ascii{OP}。
+
+\subsubsection{同位}
+
+使用\code{COLOCATED\_NODE}指定该\ascii{OP}与指定的节点被同时放置在特定设备上。例如：
+
+\begin{leftbar}
+\begin{python}
+@other/node  # colocate with "other/node"
+\end{python}
+\end{leftbar}
+
+\subsubsection{DeviceSpec}
+
+一个设备规范可以使用字符串，或者\code{DeviceSpec}表示。其中，\code{DeviceSpec}使用如下\ascii{5}个标识确定一个设备规范。
+
+\begin{enum}
+  \eitem{作业名称}
+  \eitem{备份索引}
+  \eitem{任务索引}
+  \eitem{设备类型}
+  \eitem{设备索引}
+\end{enum}
+
+例如，使用\code{DeviceSpec}构造的设备规范。
+
+\begin{leftbar}
+\begin{python}
+# '/job:ps/replica:0/task:0/device:CPU:0'
+DeviceSpec(job="ps", replica=0, task=0, device_type="CPU", device_index=0)
+\end{python}
+\end{leftbar}
+
+\subsection{上下文管理器}
+
+常常使用上下文管理器\ascii{(Context Manager)}指定\ascii{OP}默认的设备类型。
+
+\begin{leftbar}
+\begin{python}
+with g.device('/gpu:0'):
+  # All OPs constructed here will be placed on GPU 0.
+\end{python}
+\end{leftbar}
+
+此处，显式地指定了图实例\code{g}。其中，\code{device}是\code{Graph}的一个方法，它定义实现了一个上下文管理器，从而实现栈式结构的上下文管理器，实现设备规范的闭包，合并，覆盖等特性。
+
+\begin{leftbar}
+\begin{python}
+def device(self, device_name_or_function):
+  device_function = to_device_function(device_name_or_function)
+  try:
+    self._device_function_stack.append(device_function)
+    yield
+  finally:
+    self._device_function_stack.pop()
+\end{python}
+\end{leftbar}
+
+\subsubsection{包装器}
+
+当用户使用\code{device}未显式地指定图实例，其使用隐式存在的默认图实例。
+
+\begin{leftbar}
+\begin{python}
+with device('/gpu:0'):
+  # All OPs constructed here will be placed on GPU 0.
+\end{python}
+\end{leftbar}
+
+也就是说，\code{device}函数事实上是对\code{get\_default\_graph().device}的一个简单包装。
+
+\begin{leftbar}
+\begin{python}
+# tensorflow/python/framework/ops.py
+def device(device_name_or_function):
+  return get_default_graph().device(device_name_or_function)
+\end{python}
+\end{leftbar}
+
+\subsubsection{合并}
+
+可以对两个不同范围的设备规范进行合并。例如：
+
+\begin{leftbar}
+\begin{python}
+with device("/job:ps"):
+  # All OPs constructed here will be placed on PS.
+  with device("/task:0/device:GPU:0"):
+    # All OPs constructed here will be placed on
+    # /job:ps/task:0/device:GPU:0
+\end{python}
+\end{leftbar}
+
+\subsubsection{覆盖}
+
+在合并两个不同范围的设备规范时，内部指定的设备规范具有高优先级，实现设备规范的覆盖。例如：
+
+\begin{leftbar}
+\begin{python}
+with device("/device:CPU:0"):
+  # All OPs constructed here will be placed on CPU 0.
+  with device("/job:ps/device:GPU:0"):
+    # All OPs constructed here will be placed on
+    # /job:ps/device:GPU:0
+\end{python}
+\end{leftbar}
+
+\subsubsection{重置}
+
+特殊地，当内部的设备规范置位为\code{None}时，将忽略外部所有设备规范的定义。
+
+\begin{leftbar}
+\begin{python}
+with device("/device:GPU:0"):
+  # All OPs constructed here will be placed on CPU 0.
+  with device(None):
+    # /device:GPU:0 will be ignored.
+\end{python}
+\end{leftbar}
+
+\subsection{设备函数}
+
+当指定设备规范时，常常使用字符串，或\code{DeviceSpec}进行描述。也可以使用更加灵活的设备函数，它提供了一种更加灵活的扩展方式指定设备。例如：
+
+\begin{leftbar}
+\begin{python}
+def matmul_on_gpu(n):
+ if n.type == "MatMul":
+   return "/gpu:0"
+ else:
+   return "/cpu:0"
+
+with g.device(matmul_on_gpu):
+  # All OPs of type "MatMul" constructed in this context
+  # will be placed on GPU 0; all other OPs will be placed
+  # on CPU 0.
+\end{python}
+\end{leftbar}
+
+事实上，当传递字符串，或者\code{DeviceSpec}给\code{device}函数时，首先会对该字符串，或\code{DeviceSpec}做一个简单的适配，使其具备设备函数的特性。
+
+\begin{leftbar}
+\begin{python}
+def device(self, device_name_or_function):
+  if (device_name_or_function is not None
+      and not callable(device_name_or_function)):
+    device_function = pydev.merge_device(device_name_or_function)
+  else:
+    device_function = device_name_or_function
+  
+  # ignore others implements.
+\end{python}
+\end{leftbar}
+
+其中，\code{pydev.merge\_device}的设计是一种典型的函数式设计，它返回了一个函数，使得\code{device}函数在后续处理不用区分字符串或函数两种类型。
+
+\begin{leftbar}
+\begin{python}
+def merge_device(spec):
+  # replace string to DeviceSpec
+  if not isinstance(spec, DeviceSpec):
+    spec = DeviceSpec.from_string(spec or "")
+
+  # returns a device function that merges devices specifications
+  def _device_function(node_def):
+    current_device = DeviceSpec.from_string(node_def.device or "")
+    copy_spec = copy.copy(spec)
+    
+    # IMPORTANT: current\_device takes precedence.
+    copy_spec.merge_from(current_device)      
+    return copy_spec
+  return _device_function
+\end{python}
+\end{leftbar}
+
+\end{content}

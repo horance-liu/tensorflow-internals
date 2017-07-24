@@ -13,17 +13,150 @@
 \contentsline {subsection}{\numberline {1.2.1}开源}{4}{subsection.1.2.1}
 \contentsline {subsection}{\numberline {1.2.2}里程碑}{4}{subsection.1.2.2}
 \contentsline {subsection}{\numberline {1.2.3}工业应用}{5}{subsection.1.2.3}
-\contentsline {chapter}{\numberline {2}系统架构}{7}{chapter.2}
-\contentsline {section}{\numberline {2.1}系统架构}{7}{section.2.1}
-\contentsline {subsection}{\numberline {2.1.1}Client}{8}{subsection.2.1.1}
-\contentsline {subsection}{\numberline {2.1.2}Master}{8}{subsection.2.1.2}
-\contentsline {subsection}{\numberline {2.1.3}Worker}{8}{subsection.2.1.3}
-\contentsline {subsection}{\numberline {2.1.4}Kernel}{9}{subsection.2.1.4}
-\contentsline {section}{\numberline {2.2}图控制}{9}{section.2.2}
-\contentsline {subsection}{\numberline {2.2.1}组建集群}{9}{subsection.2.2.1}
-\contentsline {subsection}{\numberline {2.2.2}图构造}{10}{subsection.2.2.2}
-\contentsline {subsection}{\numberline {2.2.3}图执行}{10}{subsection.2.2.3}
-\contentsline {subsubsection}{图分裂}{11}{figure.caption.12}
-\contentsline {subsubsection}{子图注册}{11}{figure.caption.13}
-\contentsline {subsubsection}{子图运算}{12}{figure.caption.14}
+\contentsline {chapter}{\numberline {2}编程环境}{7}{chapter.2}
+\contentsline {section}{\numberline {2.1}代码结构}{7}{section.2.1}
+\contentsline {subsection}{\numberline {2.1.1}克隆源码}{7}{subsection.2.1.1}
+\contentsline {subsection}{\numberline {2.1.2}TensorFlow源码}{7}{subsection.2.1.2}
+\contentsline {subsection}{\numberline {2.1.3}内核}{8}{subsection.2.1.3}
+\contentsline {subsection}{\numberline {2.1.4}Python接口}{8}{subsection.2.1.4}
+\contentsline {subsection}{\numberline {2.1.5}StreamExecutor}{9}{subsection.2.1.5}
+\contentsline {section}{\numberline {2.2}工程构建}{9}{section.2.2}
+\contentsline {subsection}{\numberline {2.2.1}环境准备}{9}{subsection.2.2.1}
+\contentsline {subsubsection}{安装JDK}{9}{subsection.2.2.1}
+\contentsline {subsubsection}{安装Bazel}{10}{lstnumber.-6.1}
+\contentsline {subsubsection}{安装Swig}{10}{lstnumber.-8.1}
+\contentsline {subsubsection}{安装Python依赖包}{10}{lstnumber.-9.1}
+\contentsline {subsection}{\numberline {2.2.2}配置}{11}{subsection.2.2.2}
+\contentsline {subsection}{\numberline {2.2.3}构建}{11}{subsection.2.2.3}
+\contentsline {subsection}{\numberline {2.2.4}安装}{11}{subsection.2.2.4}
+\contentsline {subsection}{\numberline {2.2.5}验证}{11}{subsection.2.2.5}
+\contentsline {section}{\numberline {2.3}技术栈}{12}{section.2.3}
+\contentsline {chapter}{\numberline {3}系统架构}{13}{chapter.3}
+\contentsline {section}{\numberline {3.1}系统架构}{13}{section.3.1}
+\contentsline {subsection}{\numberline {3.1.1}Client}{14}{subsection.3.1.1}
+\contentsline {subsection}{\numberline {3.1.2}Master}{14}{subsection.3.1.2}
+\contentsline {subsection}{\numberline {3.1.3}Worker}{14}{subsection.3.1.3}
+\contentsline {subsection}{\numberline {3.1.4}Kernel}{15}{subsection.3.1.4}
+\contentsline {section}{\numberline {3.2}图控制}{15}{section.3.2}
+\contentsline {subsection}{\numberline {3.2.1}组建集群}{15}{subsection.3.2.1}
+\contentsline {subsection}{\numberline {3.2.2}图构造}{16}{subsection.3.2.2}
+\contentsline {subsection}{\numberline {3.2.3}图执行}{16}{subsection.3.2.3}
+\contentsline {subsubsection}{图分裂}{17}{figure.caption.13}
+\contentsline {subsubsection}{子图注册}{17}{figure.caption.14}
+\contentsline {subsubsection}{子图运算}{18}{figure.caption.15}
+\contentsline {chapter}{\numberline {4}计算图}{19}{chapter.4}
+\contentsline {section}{\numberline {4.1}Python前端}{19}{section.4.1}
+\contentsline {subsection}{\numberline {4.1.1}Operation}{19}{subsection.4.1.1}
+\contentsline {subsection}{\numberline {4.1.2}Tensor}{20}{subsection.4.1.2}
+\contentsline {subsubsection}{生产者与消费者}{20}{figure.caption.18}
+\contentsline {subsubsection}{建立关联}{21}{figure.caption.19}
+\contentsline {subsection}{\numberline {4.1.3}Graph}{22}{subsection.4.1.3}
+\contentsline {subsection}{\numberline {4.1.4}图构造}{22}{subsection.4.1.4}
+\contentsline {subsubsection}{OpDef仓库}{22}{subsection.4.1.4}
+\contentsline {subsubsection}{工厂方法}{23}{lstnumber.-19.26}
+\contentsline {subsubsection}{OP构造器}{24}{figure.caption.21}
+\contentsline {subsubsection}{构造OpDef与NodeDef}{24}{figure.caption.22}
+\contentsline {section}{\numberline {4.2}后端C++}{24}{section.4.2}
+\contentsline {subsection}{\numberline {4.2.1}边}{24}{subsection.4.2.1}
+\contentsline {subsubsection}{两个标识}{25}{Item.24}
+\contentsline {subsubsection}{控制依赖}{25}{figure.caption.25}
+\contentsline {subsubsection}{Tensor标识}{26}{lstnumber.-20.4}
+\contentsline {subsection}{\numberline {4.2.2}节点}{26}{subsection.4.2.2}
+\contentsline {subsubsection}{输入边}{27}{figure.caption.26}
+\contentsline {subsubsection}{前驱节点}{27}{lstnumber.-22.9}
+\contentsline {subsection}{\numberline {4.2.3}图}{27}{subsection.4.2.3}
+\contentsline {subsubsection}{空图}{28}{figure.caption.27}
+\contentsline {subsubsection}{非空图}{29}{lstnumber.-24.18}
+\contentsline {subsubsection}{添加边}{29}{figure.caption.29}
+\contentsline {subsubsection}{添加控制依赖边}{30}{lstnumber.-25.26}
+\contentsline {subsection}{\numberline {4.2.4}OpDef仓库}{30}{subsection.4.2.4}
+\contentsline {section}{\numberline {4.3}图传递}{30}{section.4.3}
+\contentsline {chapter}{\numberline {5}变量}{31}{chapter.5}
+\contentsline {section}{\numberline {5.1}实战：线性模型}{31}{section.5.1}
+\contentsline {section}{\numberline {5.2}初始化模型}{31}{section.5.2}
+\contentsline {subsection}{\numberline {5.2.1}操作变量}{32}{subsection.5.2.1}
+\contentsline {subsection}{\numberline {5.2.2}初始值}{33}{subsection.5.2.2}
+\contentsline {subsection}{\numberline {5.2.3}初始化器}{33}{subsection.5.2.3}
+\contentsline {subsection}{\numberline {5.2.4}快照}{33}{subsection.5.2.4}
+\contentsline {subsection}{\numberline {5.2.5}变量子图}{34}{subsection.5.2.5}
+\contentsline {subsection}{\numberline {5.2.6}初始化过程}{34}{subsection.5.2.6}
+\contentsline {subsection}{\numberline {5.2.7}同位关系}{34}{subsection.5.2.7}
+\contentsline {subsection}{\numberline {5.2.8}初始化依赖}{35}{subsection.5.2.8}
+\contentsline {subsection}{\numberline {5.2.9}初始化器列表}{36}{subsection.5.2.9}
+\contentsline {section}{\numberline {5.3}变量分组}{37}{section.5.3}
+\contentsline {subsection}{\numberline {5.3.1}全局变量}{37}{subsection.5.3.1}
+\contentsline {subsection}{\numberline {5.3.2}本地变量}{38}{subsection.5.3.2}
+\contentsline {subsection}{\numberline {5.3.3}训练变量}{38}{subsection.5.3.3}
+\contentsline {subsection}{\numberline {5.3.4}global\_step}{38}{subsection.5.3.4}
+\contentsline {section}{\numberline {5.4}源码分析：构造变量}{39}{section.5.4}
+\contentsline {subsection}{\numberline {5.4.1}构造变量OP}{39}{subsection.5.4.1}
+\contentsline {subsection}{\numberline {5.4.2}构造初始化器}{39}{subsection.5.4.2}
+\contentsline {subsection}{\numberline {5.4.3}构造快照}{40}{subsection.5.4.3}
+\contentsline {subsection}{\numberline {5.4.4}变量分组}{40}{subsection.5.4.4}
+\contentsline {chapter}{\numberline {6}设备}{41}{chapter.6}
+\contentsline {section}{\numberline {6.1}设备规范}{41}{section.6.1}
+\contentsline {subsection}{\numberline {6.1.1}形式化}{41}{subsection.6.1.1}
+\contentsline {subsubsection}{完整指定}{41}{lstnumber.-50.7}
+\contentsline {subsubsection}{部分指定}{41}{lstnumber.-51.1}
+\contentsline {subsubsection}{同位}{42}{lstnumber.-52.1}
+\contentsline {subsubsection}{DeviceSpec}{42}{lstnumber.-53.1}
+\contentsline {subsection}{\numberline {6.1.2}上下文管理器}{42}{subsection.6.1.2}
+\contentsline {subsubsection}{包装器}{43}{lstnumber.-56.7}
+\contentsline {subsubsection}{合并}{43}{lstnumber.-58.3}
+\contentsline {subsubsection}{覆盖}{43}{lstnumber.-59.5}
+\contentsline {subsubsection}{重置}{43}{lstnumber.-60.5}
+\contentsline {subsection}{\numberline {6.1.3}设备函数}{44}{subsection.6.1.3}
+\contentsline {chapter}{\numberline {7}会话}{45}{chapter.7}
+\contentsline {section}{\numberline {7.1}资源管理}{45}{section.7.1}
+\contentsline {subsection}{\numberline {7.1.1}关闭会话}{45}{subsection.7.1.1}
+\contentsline {subsection}{\numberline {7.1.2}上下文管理器}{45}{subsection.7.1.2}
+\contentsline {subsection}{\numberline {7.1.3}图实例}{45}{subsection.7.1.3}
+\contentsline {subsubsection}{引用计数器}{46}{subsection.7.1.3}
+\contentsline {subsubsection}{数据结构}{46}{figure.caption.38}
+\contentsline {subsubsection}{创建会话}{47}{lstnumber.-68.8}
+\contentsline {subsubsection}{销毁会话}{47}{lstnumber.-69.15}
+\contentsline {section}{\numberline {7.2}默认会话}{47}{section.7.2}
+\contentsline {subsection}{\numberline {7.2.1}张量求值}{48}{subsection.7.2.1}
+\contentsline {subsection}{\numberline {7.2.2}OP运算}{48}{subsection.7.2.2}
+\contentsline {subsection}{\numberline {7.2.3}线程相关}{48}{subsection.7.2.3}
+\contentsline {section}{\numberline {7.3}会话类型}{49}{section.7.3}
+\contentsline {subsection}{\numberline {7.3.1}Session}{49}{subsection.7.3.1}
+\contentsline {subsection}{\numberline {7.3.2}InteractiveSession}{50}{subsection.7.3.2}
+\contentsline {subsection}{\numberline {7.3.3}BaseSession}{50}{subsection.7.3.3}
+\contentsline {subsubsection}{创建会话}{50}{subsection.7.3.3}
+\contentsline {subsubsection}{执行计算图}{51}{lstnumber.-78.6}
+\contentsline {subsubsection}{关闭会话}{51}{lstnumber.-79.13}
+\contentsline {subsubsection}{销毁会话}{51}{lstnumber.-80.4}
+\contentsline {chapter}{\numberline {8}Saver}{53}{chapter.8}
+\contentsline {section}{\numberline {8.1}Saver}{53}{section.8.1}
+\contentsline {subsection}{\numberline {8.1.1}使用方法}{53}{subsection.8.1.1}
+\contentsline {subsection}{\numberline {8.1.2}文件功能}{54}{subsection.8.1.2}
+\contentsline {subsubsection}{索引文件}{54}{lstnumber.-84.4}
+\contentsline {subsubsection}{数据文件}{54}{lstnumber.-84.4}
+\contentsline {subsubsection}{元文件}{54}{lstnumber.-84.4}
+\contentsline {subsubsection}{状态文件}{55}{lstnumber.-84.4}
+\contentsline {subsection}{\numberline {8.1.3}模型}{55}{subsection.8.1.3}
+\contentsline {subsubsection}{持久化模型}{55}{subsection.8.1.3}
+\contentsline {subsubsection}{恢复模型}{56}{figure.caption.40}
+\contentsline {chapter}{\numberline {9}MonitoredSession}{57}{chapter.9}
+\contentsline {section}{\numberline {9.1}引入MonitoredSession}{57}{section.9.1}
+\contentsline {subsection}{\numberline {9.1.1}使用方法}{58}{subsection.9.1.1}
+\contentsline {subsection}{\numberline {9.1.2}使用工厂}{58}{subsection.9.1.2}
+\contentsline {subsection}{\numberline {9.1.3}装饰器}{59}{subsection.9.1.3}
+\contentsline {section}{\numberline {9.2}生命周期}{59}{section.9.2}
+\contentsline {subsection}{\numberline {9.2.1}初始化}{60}{subsection.9.2.1}
+\contentsline {subsection}{\numberline {9.2.2}执行}{61}{subsection.9.2.2}
+\contentsline {subsection}{\numberline {9.2.3}关闭}{61}{subsection.9.2.3}
+\contentsline {section}{\numberline {9.3}模型初始化}{62}{section.9.3}
+\contentsline {subsection}{\numberline {9.3.1}协调协议}{62}{subsection.9.3.1}
+\contentsline {subsection}{\numberline {9.3.2}SessionManager}{62}{subsection.9.3.2}
+\contentsline {subsection}{\numberline {9.3.3}引入工厂}{63}{subsection.9.3.3}
+\contentsline {subsection}{\numberline {9.3.4}Scaffold}{63}{subsection.9.3.4}
+\contentsline {subsection}{\numberline {9.3.5}初始化算法}{65}{subsection.9.3.5}
+\contentsline {subsection}{\numberline {9.3.6}本地变量初始化}{65}{subsection.9.3.6}
+\contentsline {subsection}{\numberline {9.3.7}验证模型}{67}{subsection.9.3.7}
+\contentsline {section}{\numberline {9.4}异常安全}{68}{section.9.4}
+\contentsline {subsection}{\numberline {9.4.1}上下文管理器}{68}{subsection.9.4.1}
+\contentsline {subsection}{\numberline {9.4.2}停止QueueRunner}{68}{subsection.9.4.2}
+\contentsline {section}{\numberline {9.5}回调钩子}{69}{section.9.5}
 \contentsfinish 

@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.14159265-2.6-0.99996 (TeX Live 2016) (preloaded format=xelatex 2016.9.28)  23 JUL 2017 05:46
+This is XeTeX, Version 3.14159265-2.6-0.99996 (TeX Live 2016) (preloaded format=xelatex 2016.9.28)  24 JUL 2017 06:10
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -2278,18 +2278,19 @@ Underfull \hbox (badness 10000) in alignment at lines 68--68
 [][]
  []
 
-) [4] (output/tensorflow-internals.toc)
+) [4] (output/tensorflow-internals.toc [5
+
+
+
+] [6])
 \tf@toc=\write5
 \openout5 = `tensorflow-internals.toc'.
 
- [5
+ [7] [8
 
 
-
-] [6
-
-
-] (./contents/introduction.tex
+]
+(./contents/introduction.tex
 LaTeX Font Info:    Font shape `EU1/LucidaBright(0)/m/sl' in size <8> not avail
 able
 (Font)              Font shape `EU1/LucidaBright(0)/m/it' tried instead on inpu
@@ -2360,16 +2361,97 @@ two letters. (See Chapter 27 of The TeXbook.)
 
 [4]
 File: figures/tf-google-apps.png Graphic file (type QTm)
- <use  "figures/tf-google-apps.png" >) (./contents/architecture.tex [5]
-[6
+ <use  "figures/tf-google-apps.png" >) (./contents/prog-env.tex [5] [6
 
 ]
 Chapter 2.
+(/usr/local/texlive/2016/texmf-dist/tex/latex/listings/lstlang1.sty
+File: lstlang1.sty 2015/06/04 1.6 listings language file
+)
+(/usr/local/texlive/2016/texmf-dist/tex/latex/listings/lstmisc.sty
+File: lstmisc.sty 2015/06/04 1.6 (Carsten Heinz)
+)
+Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on i
+nput line 52.
+ [7]
+
+LaTeX Font Warning: Font shape `EU1/Monaco(0)/bx/n' undefined
+(Font)              using `EU1/Monaco(0)/m/n' instead on input line 91.
+
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.123 \end{leftbar}
+                   
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[8]
+! Undefined control sequence.
+l.151 ...其运行时环境。例如，使用\asci
+                                                  {Python}的前端编程接...
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Underfull \vbox (badness 1048) has occurred while \output is active []
+
+ [9]
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.222 \end{leftbar}
+                   
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[10] [11]
+File: figures/tf-stack.png Graphic file (type QTm)
+ <use  "figures/tf-stack.png" >
+! Extra }, or forgotten \endgroup.
+\@endfloatbox ...pagefalse \outer@nobreak \egroup 
+                                                  \color@endbox 
+l.300 \end{figure}
+                  
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+) (./contents/architecture.tex
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.6 \chapter
+            {系统架构}
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[12]
+Chapter 3.
 File: figures/tf-architecture.png Graphic file (type QTm)
 <use  "figures/tf-architecture.png" >
 Underfull \vbox (badness 1460) has occurred while \output is active []
 
- [7]
+ [13
+
+]
 ! Illegal unit of measure (pt inserted).
 <to be read again> 
                    \relax 
@@ -2382,7 +2464,7 @@ To recover gracefully from this error, it's best to
 delete the erroneous units; e.g., type `2' to delete
 two letters. (See Chapter 27 of The TeXbook.)
 
-[8]
+[14]
 File: figures/tf-1ps-1worker.png Graphic file (type QTm)
  <use  "figures/tf-1ps-1worker.png" >
 File: figures/tf-graph-construction.png Graphic file (type QTm)
@@ -2400,9 +2482,9 @@ the way to recover is to insert both the forgotten and the
 deleted material, e.g., by typing `I$}'.
 
 
-Underfull \vbox (badness 5245) has occurred while \output is active []
+Underfull \vbox (badness 1286) has occurred while \output is active []
 
- [9]
+ [15]
 File: figures/tf-graph-execution.png Graphic file (type QTm)
 
 <use  "figures/tf-graph-execution.png" >
@@ -2429,7 +2511,7 @@ To recover gracefully from this error, it's best to
 delete the erroneous units; e.g., type `2' to delete
 two letters. (See Chapter 27 of The TeXbook.)
 
-[10]
+[16]
 File: figures/tf-graph-split-by-task.png Graphic file (type QTm)
  <use  "figures/tf-graph-split-by-task.png" >
 ! Extra }, or forgotten \endgroup.
@@ -2443,7 +2525,7 @@ you forgot something else, as in `\hbox{$x}'. In such cases
 the way to recover is to insert both the forgotten and the
 deleted material, e.g., by typing `I$}'.
 
-[11]
+[17]
 File: figures/tf-register-graph.png Graphic file (type QTm)
  <use  "figures/tf-register-graph.png" >
 ! Extra }, or forgotten \endgroup.
@@ -2470,12 +2552,12 @@ you forgot something else, as in `\hbox{$x}'. In such cases
 the way to recover is to insert both the forgotten and the
 deleted material, e.g., by typing `I$}'.
 
-)
+) (./contents/graph.tex
 ! Illegal unit of measure (pt inserted).
 <to be read again> 
                    \relax 
-l.90 \backmatter
-                
+l.6 \chapter
+            {计算图}
 Dimensions can be in units of em, ex, in, pt, pc,
 cm, mm, dd, cc, bp, or sp; but yours is a new one!
 I'll assume that you meant to say pt, for printer's points.
@@ -2483,25 +2565,568 @@ To recover gracefully from this error, it's best to
 delete the erroneous units; e.g., type `2' to delete
 two letters. (See Chapter 27 of The TeXbook.)
 
-[12]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 102.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 102.
- (output/tensorflow-internals.aux)
-Package atveryend Info: Empty hook `AtVeryEndDocument' on input line 102.
-Package atveryend Info: Empty hook `AtEndAfterFileList' on input line 102.
+[18]
+Chapter 4.
+File: figures/py-operation.png Graphic file (type QTm)
+<use  "figures/py-operation.png" >
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [19
+
+]
+File: figures/py-tensor.png Graphic file (type QTm)
+
+<use  "figures/py-tensor.png" >
+File: figures/py-tensor-producter-consumer.png Graphic file (type QTm)
+
+<use  "figures/py-tensor-producter-consumer.png" >
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.72 \end{figure}
+                 
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[20]
+File: figures/py-graph.png Graphic file (type QTm)
+ <use  "figures/py-graph.png" >
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [21]
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.137 \begin{leftbar}
+                     
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[22]
+File: figures/py-op-factory-and-repo.png Graphic file (type QTm)
+ <use  "figures/py-op-factory-and-repo.png" >
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [23]
+File: figures/py-op-constructor.png Graphic file (type QTm)
+
+<use  "figures/py-op-constructor.png" >
+File: figures/py-graph-create-op.png Graphic file (type QTm)
+
+<use  "figures/py-graph-create-op.png" >
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.229 ...�的第\code{src\_output}条输出边；}
+                                                  
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[24]
+File: figures/cc-edge-model.png Graphic file (type QTm)
+ <use  "figures/cc-edge-model.png" >
+File: figures/cc-edge-model-example.png Graphic file (type QTm)
+
+<use  "figures/cc-edge-model-example.png" > [25]
+File: figures/cc-node-model.png Graphic file (type QTm)
+
+<use  "figures/cc-node-model.png" >
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.290 \begin{leftbar}
+                     
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[26]
+File: figures/cc-graph-model.png Graphic file (type QTm)
+ <use  "figures/cc-graph-model.png" >
+Underfull \vbox (badness 1024) has occurred while \output is active []
+
+ [27]
+File: figures/cc-empty-graph.png Graphic file (type QTm)
+
+<use  "figures/cc-empty-graph.png" >
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.373 
+      
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[28]
+File: figures/cc-non-empty-graph.png Graphic file (type QTm)
+ <use  "figures/cc-non-empty-graph.png" >
+Underfull \vbox (badness 1184) has occurred while \output is active []
+
+ [29]
+File: figures/cc-op-repo.png Graphic file (type QTm)
+
+<use  "figures/cc-op-repo.png" >
+File: figures/py-graph-creation.png Graphic file (type QTm)
+ <use  "figures/py-graph-creation.png" >)
+(./contents/variable.tex
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.6 \chapter
+            {变量}
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[30]
+Chapter 5.
+File: figures/tf-linear-model.png Graphic file (type QTm)
+<use  "figures/tf-linear-model.png" >
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+File: figures/tf-real-linear-model.png Graphic file (type QTm)
+<use  "figures/tf-real-linear-model.png" >
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+[31
+
+]
+! Extra }, or forgotten \endgroup.
+<recently read> }
+                 
+l.85 ... to the variable with }assign/assign\_add}
+                                                  .
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.87 w.assign_
+              add(1.0)
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.88 \end{python}
+                 
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.94 
+     
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[32] [33]
+File: figures/variable-initialization-model.png Graphic file (type QTm)
+ <use  "figures/variable-initialization-model.png" >
+File: figures/variable-initialization-no-op.png Graphic file (type QTm)
+
+<use  "figures/variable-initialization-no-op.png" >
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.180 例
+         如，以\code{W/read}节点为例，该节点增加了\code{\_clas...
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[34]
+File: figures/variable-initialization-dependency-1.png Graphic file (type QTm)
+ <use  "figures/variable-initialization-dependency-1.png" >
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+[35]
+File: figures/variable-initialization-dependency-2.png Graphic file (type QTm)
+ <use  "figures/variable-initialization-dependency-2.png" >
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.259 \begin{leftbar}
+                     
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[36] [37]
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.341 \end{leftbar}
+                   
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[38]
+! Undefined control sequence.
+l.367 \subssection
+                  {构造初始值}
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+[39]) (./contents/device.tex
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.6 \chapter
+            {设备}
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[40]
+Chapter 6.
+[41
+
+]
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.117 \begin{leftbar}
+                     
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[42] [43]) (./contents/session.tex
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.6 \chapter
+            {会话}
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[44]
+Chapter 7.
+[45
+
+]
+File: figures/tf-graph-session-relation.png Graphic file (type QTm)
+ <use  "figures/tf-graph-session-relation.png" >
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.99 \end{leftbar}
+                  
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[46] [47]
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.225 \end{leftbar}
+                   
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[48]
+Overfull \hbox (31.14223pt too wide) in paragraph at lines 235--236
+[]\EU1/AdobeSongStd(1)/m/n/10 此 外，|  两 者 在 运 行 时 的 配 置 也 存 在 差 异。|  例 如，| \EU1/
+Monaco(0)/m/it/8 InteractiveSession \EU1/AdobeSongStd(1)/m/n/10 将 \EU1/Monaco(0
+)/m/it/8 GPUOptions.allow_growth
+ []
+
+File: figures/py-session-hierarchy.png Graphic file (type QTm)
+<use  "figures/py-session-hierarchy.png" > [49]
+Underfull \vbox (badness 3333) has occurred while \output is active []
+
+
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.320 \end{leftbar}
+                   
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[50]) (./contents/saver.tex [51] [52
+
+]
+Chapter 8.
+[53]
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.82 
+     
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[54]
+File: figures/py-saver-save-model.png Graphic file (type QTm)
+ <use  "figures/py-saver-save-model.png" >
+Underfull \vbox (badness 8038) has occurred while \output is active []
+
+ [55]
+File: figures/py-saver-restore-model.png Graphic file (type QTm)
+
+<use  "figures/py-saver-restore-model.png" >) (./contents/monitored-session.tex
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.6 \chapter
+            {MonitoredSession}
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[56]
+Chapter 9.
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [57
+
+]
+File: figures/py-train-monitored-training-session.png Graphic file (type QTm)
+
+<use  "figures/py-train-monitored-training-session.png" >
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.93 \end{leftbar}
+                  
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[58]
+File: figures/py-train-monitored-session-decorator.png Graphic file (type QTm)
+ <use  "figures/py-train-monitored-session-decorator.png" > [59]
+File: figures/py-train-monitored-session-initialization.png Graphic file (type 
+QTm)
+
+<use  "figures/py-train-monitored-session-initialization.png" >
+File: figures/py-train-monitored-session-execution.png Graphic file (type QTm)
+
+<use  "figures/py-train-monitored-session-execution.png" >
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.168 \end{figure}
+                  
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[60]
+File: figures/py-train-monitored-session-close.png Graphic file (type QTm)
+ <use  "figures/py-train-monitored-session-close.png" >
+Underfull \vbox (badness 5862) has occurred while \output is active []
+
+ [61]
+File: figures/py-train-session-creator.png Graphic file (type QTm)
+
+<use  "figures/py-train-session-creator.png" >
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.250 \end{figure}
+                  
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[62] [63]
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.342 \subsection{初始化算法}
+                                  
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[64]
+File: figures/py-train-session-initialization-algo.png Graphic file (type QTm)
+ <use  "figures/py-train-session-initialization-algo.png" > [65]
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.396 \begin{leftbar}
+                     
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[66]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [67]
+! Illegal unit of measure (pt inserted).
+<to be read again> 
+                   \relax 
+l.520 \begin{leftbar}
+                     
+Dimensions can be in units of em, ex, in, pt, pc,
+cm, mm, dd, cc, bp, or sp; but yours is a new one!
+I'll assume that you meant to say pt, for printer's points.
+To recover gracefully from this error, it's best to
+delete the erroneous units; e.g., type `2' to delete
+two letters. (See Chapter 27 of The TeXbook.)
+
+[68]
+File: figures/py-train-session-run-hook.png Graphic file (type QTm)
+ <use  "figures/py-train-session-run-hook.png" >) [69] [70
+
+]
+
+! LaTeX Error: \begin{spacing} on input line 369 ended by \end{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.109 \end{document}
+                    
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 109.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 109.
+(output/tensorflow-internals.aux)
+Package atveryend Info: Empty hook `AtVeryEndDocument' on input line 109.
+Package atveryend Info: Empty hook `AtEndAfterFileList' on input line 109.
 
 
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 102.
- ) 
-Here is how much of TeX's memory you used:
- 42878 strings out of 493591
- 868082 string characters out of 6143546
- 913412 words of memory out of 5000000
- 45570 multiletter control sequences out of 15000+600000
- 6656 words of font info for 78 fonts, out of 8000000 for 9000
- 1347 hyphenation exceptions out of 8191
- 53i,12n,82p,10418b,793s stack positions out of 5000i,500n,10000p,200000b,80000s
 
-Output written on output/tensorflow-internals.pdf (18 pages).
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 109.
+ )
+(\end occurred inside a group at level 9)
+
+### semi simple group (level 9) entered at line 369 (\begingroup)
+### semi simple group (level 8) entered at line 369 (\begingroup)
+### semi simple group (level 7) entered at line 369 (\begingroup)
+### semi simple group (level 6) entered at line 231 (\begingroup)
+### semi simple group (level 5) entered at line 231 (\begingroup)
+### semi simple group (level 4) entered at line 231 (\begingroup)
+### semi simple group (level 3) entered at line 19 (\begingroup)
+### semi simple group (level 2) entered at line 19 (\begingroup)
+### semi simple group (level 1) entered at line 19 (\begingroup)
+### bottom level 
+Here is how much of TeX's memory you used:
+ 44537 strings out of 493591
+ 896766 string characters out of 6143546
+ 967054 words of memory out of 5000000
+ 47162 multiletter control sequences out of 15000+600000
+ 8945 words of font info for 88 fonts, out of 8000000 for 9000
+ 1347 hyphenation exceptions out of 8191
+ 60i,12n,121p,10418b,1328s stack positions out of 5000i,500n,10000p,200000b,80000s
+
+Output written on output/tensorflow-internals.pdf (78 pages).
