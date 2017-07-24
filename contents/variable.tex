@@ -82,7 +82,7 @@ y = tf.matmul(x, W)
 # The overloaded operators are available too.
 z = tf.sigmoid(w + y)
 
-# Assign a new value to the variable with }assign/assign\_add}.
+# Assign a new value to the variable with assign/assign\_add.
 w.assign(w + 1.0)
 w.assign_add(1.0)
 \end{python}
@@ -364,7 +364,7 @@ class Variable(object):
 
 构造\ascii{Variable}实例，基本包括如下几个步骤：
 
-\subssection{构造初始值}
+\subsection{构造初始值}
 
 \begin{leftbar}
 \begin{python}
