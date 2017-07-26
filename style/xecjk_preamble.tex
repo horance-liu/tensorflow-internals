@@ -122,12 +122,17 @@
   \vskip -0.5\baselineskip
 }
 
+% 插入小段故事的语法：
+% \begin{story}
+%   \begin{center}
+%     \inlinetitle{分水岭}
+%   \end{center}
+% \end{story}
 \newenvironment{story}
 {
   \setlength{\parskip}{0.5\baselineskip}
   \hbox to \textwidth{\hfil\rule{\linewidth}{0.5mm}\hfil}
   \begin{spacing}{1.5}
-  \fangsong
 }{%
   \end{spacing}
   \hbox to \textwidth{\hfil\rule{\linewidth}{0.5mm}\hfil}
@@ -164,6 +169,15 @@
 
 \renewcommand{\footnoterule}{\vspace*{3pt}%
   \hrule width 0.382\textwidth height 0.4pt \vspace*{2.6pt}}
-  
+
+% Remark
+\newenvironment{remark}{\par\vskip10pt\footnotesize\itshape % Vertical white space above the remark and smaller font size
+\begin{list}{}{
+\leftmargin=35pt % Indentation on the left
+\rightmargin=25pt}\item\ignorespaces % Indentation on the right
+\makebox[-2.5pt]{\begin{tikzpicture}[overlay]
+\node[draw=red!60,line width=1pt,circle,fill=red!25,font=\sffamily\bfseries,inner sep=2pt,outer sep=0pt] at (-15pt,0pt){\textcolor{red}{R}};\end{tikzpicture}}
+\advance\baselineskip -1pt}{\end{list}\vskip5pt}
+
 %%%% 中文重定义结束
 %%%%%%%%------------------------------------------------------------------------

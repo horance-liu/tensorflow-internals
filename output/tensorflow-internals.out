@@ -1,17 +1,228 @@
-\BOOKMARK [0][]{chapter.1}{1 数据加载}{}% 1
-\BOOKMARK [1][]{section.1.1}{1.1 数据注入}{chapter.1}% 2
-\BOOKMARK [1][]{section.1.2}{1.2 数据预加载}{chapter.1}% 3
-\BOOKMARK [2][]{subsection.1.2.1}{1.2.1 使用Const}{section.1.2}% 4
-\BOOKMARK [2][]{subsection.1.2.2}{1.2.2 使用Variable}{section.1.2}% 5
-\BOOKMARK [2][]{subsection.1.2.3}{1.2.3 批次预加载}{section.1.2}% 6
-\BOOKMARK [1][]{section.1.3}{1.3 数据管道}{chapter.1}% 7
-\BOOKMARK [2][]{subsection.1.3.1}{1.3.1 构建文件名队列}{section.1.3}% 8
-\BOOKMARK [2][]{subsection.1.3.2}{1.3.2 读取器}{section.1.3}% 9
-\BOOKMARK [2][]{subsection.1.3.3}{1.3.3 解码器}{section.1.3}% 10
-\BOOKMARK [2][]{subsection.1.3.4}{1.3.4 构建样本队列}{section.1.3}% 11
-\BOOKMARK [2][]{subsection.1.3.5}{1.3.5 输入子图}{section.1.3}% 12
-\BOOKMARK [1][]{section.1.4}{1.4 数据协同}{chapter.1}% 13
-\BOOKMARK [2][]{subsection.1.4.1}{1.4.1 阶段1}{section.1.4}% 14
-\BOOKMARK [2][]{subsection.1.4.2}{1.4.2 阶段2}{section.1.4}% 15
-\BOOKMARK [2][]{subsection.1.4.3}{1.4.3 阶段3}{section.1.4}% 16
-\BOOKMARK [2][]{subsection.1.4.4}{1.4.4 Pipeline节拍}{section.1.4}% 17
+\BOOKMARK [0][]{chapter*.1}{前言}{}% 1
+\BOOKMARK [-1][]{part.1}{I 基础知识}{}% 2
+\BOOKMARK [0][]{chapter.1}{1 介绍}{part.1}% 3
+\BOOKMARK [1][]{section.1.1}{1.1 前世今生}{chapter.1}% 4
+\BOOKMARK [2][]{subsection.1.1.1}{1.1.1\040DistBelief}{section.1.1}% 5
+\BOOKMARK [2][]{subsection.1.1.2}{1.1.2\040TensorFlow}{section.1.1}% 6
+\BOOKMARK [1][]{section.1.2}{1.2 社区发展}{chapter.1}% 7
+\BOOKMARK [2][]{subsection.1.2.1}{1.2.1 开源}{section.1.2}% 8
+\BOOKMARK [2][]{subsection.1.2.2}{1.2.2 里程碑}{section.1.2}% 9
+\BOOKMARK [2][]{subsection.1.2.3}{1.2.3 工业应用}{section.1.2}% 10
+\BOOKMARK [0][]{chapter.2}{2 编程环境}{part.1}% 11
+\BOOKMARK [1][]{section.2.1}{2.1 代码结构}{chapter.2}% 12
+\BOOKMARK [2][]{subsection.2.1.1}{2.1.1 克隆源码}{section.2.1}% 13
+\BOOKMARK [2][]{subsection.2.1.2}{2.1.2 源码结构}{section.2.1}% 14
+\BOOKMARK [2][]{subsection.2.1.3}{2.1.3 内核}{section.2.1}% 15
+\BOOKMARK [2][]{subsection.2.1.4}{2.1.4 Python接口}{section.2.1}% 16
+\BOOKMARK [2][]{subsection.2.1.5}{2.1.5\040StreamExecutor}{section.2.1}% 17
+\BOOKMARK [1][]{section.2.2}{2.2 工程构建}{chapter.2}% 18
+\BOOKMARK [2][]{subsection.2.2.1}{2.2.1 环境准备}{section.2.2}% 19
+\BOOKMARK [2][]{subsection.2.2.2}{2.2.2 配置}{section.2.2}% 20
+\BOOKMARK [2][]{subsection.2.2.3}{2.2.3 构建}{section.2.2}% 21
+\BOOKMARK [2][]{subsection.2.2.4}{2.2.4 安装}{section.2.2}% 22
+\BOOKMARK [2][]{subsection.2.2.5}{2.2.5 验证}{section.2.2}% 23
+\BOOKMARK [1][]{section.2.3}{2.3 技术栈}{chapter.2}% 24
+\BOOKMARK [-1][]{part.2}{II 系统架构}{}% 25
+\BOOKMARK [0][]{chapter.3}{3 系统架构}{part.2}% 26
+\BOOKMARK [1][]{section.3.1}{3.1 系统架构}{chapter.3}% 27
+\BOOKMARK [2][]{subsection.3.1.1}{3.1.1\040Client}{section.3.1}% 28
+\BOOKMARK [2][]{subsection.3.1.2}{3.1.2\040Master}{section.3.1}% 29
+\BOOKMARK [2][]{subsection.3.1.3}{3.1.3\040Worker}{section.3.1}% 30
+\BOOKMARK [2][]{subsection.3.1.4}{3.1.4\040Kernel}{section.3.1}% 31
+\BOOKMARK [1][]{section.3.2}{3.2 图控制}{chapter.3}% 32
+\BOOKMARK [2][]{subsection.3.2.1}{3.2.1 组建集群}{section.3.2}% 33
+\BOOKMARK [2][]{subsection.3.2.2}{3.2.2 图构造}{section.3.2}% 34
+\BOOKMARK [2][]{subsection.3.2.3}{3.2.3 图执行}{section.3.2}% 35
+\BOOKMARK [1][]{section.3.3}{3.3 会话管理}{chapter.3}% 36
+\BOOKMARK [2][]{subsection.3.3.1}{3.3.1 创建会话}{section.3.3}% 37
+\BOOKMARK [2][]{subsection.3.3.2}{3.3.2 迭代运行}{section.3.3}% 38
+\BOOKMARK [2][]{subsection.3.3.3}{3.3.3 关闭会话}{section.3.3}% 39
+\BOOKMARK [0][]{chapter.4}{4 C API：分水岭}{part.2}% 40
+\BOOKMARK [1][]{section.4.1}{4.1 Swig：幕后英雄}{chapter.4}% 41
+\BOOKMARK [1][]{section.4.2}{4.2 客户端代理}{chapter.4}% 42
+\BOOKMARK [1][]{section.4.3}{4.3 会话生命周期}{chapter.4}% 43
+\BOOKMARK [2][]{subsection.4.3.1}{4.3.1 Python前端}{section.4.3}% 44
+\BOOKMARK [2][]{subsection.4.3.2}{4.3.2 C++后端}{section.4.3}% 45
+\BOOKMARK [1][]{section.4.4}{4.4 创建会话}{chapter.4}% 46
+\BOOKMARK [2][]{subsection.4.4.1}{4.4.1 编程接口}{section.4.4}% 47
+\BOOKMARK [2][]{subsection.4.4.2}{4.4.2\040C\040API}{section.4.4}% 48
+\BOOKMARK [2][]{subsection.4.4.3}{4.4.3 后端系统}{section.4.4}% 49
+\BOOKMARK [1][]{section.4.5}{4.5 创建/扩展图}{chapter.4}% 50
+\BOOKMARK [2][]{subsection.4.5.1}{4.5.1 编程接口}{section.4.5}% 51
+\BOOKMARK [2][]{subsection.4.5.2}{4.5.2\040C\040API}{section.4.5}% 52
+\BOOKMARK [2][]{subsection.4.5.3}{4.5.3 后端系统}{section.4.5}% 53
+\BOOKMARK [1][]{section.4.6}{4.6 迭代运行}{chapter.4}% 54
+\BOOKMARK [2][]{subsection.4.6.1}{4.6.1 编程接口}{section.4.6}% 55
+\BOOKMARK [2][]{subsection.4.6.2}{4.6.2\040C\040API}{section.4.6}% 56
+\BOOKMARK [2][]{subsection.4.6.3}{4.6.3 后端系统}{section.4.6}% 57
+\BOOKMARK [1][]{section.4.7}{4.7 关闭会话}{chapter.4}% 58
+\BOOKMARK [2][]{subsection.4.7.1}{4.7.1 编程接口}{section.4.7}% 59
+\BOOKMARK [2][]{subsection.4.7.2}{4.7.2\040C\040API}{section.4.7}% 60
+\BOOKMARK [2][]{subsection.4.7.3}{4.7.3 后端系统}{section.4.7}% 61
+\BOOKMARK [1][]{section.4.8}{4.8 销毁会话}{chapter.4}% 62
+\BOOKMARK [2][]{subsection.4.8.1}{4.8.1 编程接口}{section.4.8}% 63
+\BOOKMARK [2][]{subsection.4.8.2}{4.8.2\040C\040API}{section.4.8}% 64
+\BOOKMARK [2][]{subsection.4.8.3}{4.8.3 后端系统}{section.4.8}% 65
+\BOOKMARK [1][]{section.4.9}{4.9 性能调优}{chapter.4}% 66
+\BOOKMARK [2][]{subsection.4.9.1}{4.9.1 创建会话}{section.4.9}% 67
+\BOOKMARK [2][]{subsection.4.9.2}{4.9.2 销毁会话}{section.4.9}% 68
+\BOOKMARK [2][]{subsection.4.9.3}{4.9.3 删除图实例}{section.4.9}% 69
+\BOOKMARK [-1][]{part.3}{III 编程模型}{}% 70
+\BOOKMARK [0][]{chapter.5}{5 计算图}{part.3}% 71
+\BOOKMARK [1][]{section.5.1}{5.1 Python前端}{chapter.5}% 72
+\BOOKMARK [2][]{subsection.5.1.1}{5.1.1\040Operation}{section.5.1}% 73
+\BOOKMARK [2][]{subsection.5.1.2}{5.1.2\040Tensor}{section.5.1}% 74
+\BOOKMARK [2][]{subsection.5.1.3}{5.1.3\040Graph}{section.5.1}% 75
+\BOOKMARK [2][]{subsection.5.1.4}{5.1.4 图构造}{section.5.1}% 76
+\BOOKMARK [1][]{section.5.2}{5.2 后端C++}{chapter.5}% 77
+\BOOKMARK [2][]{subsection.5.2.1}{5.2.1 边}{section.5.2}% 78
+\BOOKMARK [2][]{subsection.5.2.2}{5.2.2 节点}{section.5.2}% 79
+\BOOKMARK [2][]{subsection.5.2.3}{5.2.3 图}{section.5.2}% 80
+\BOOKMARK [2][]{subsection.5.2.4}{5.2.4 OpDef仓库}{section.5.2}% 81
+\BOOKMARK [1][]{section.5.3}{5.3 图传递}{chapter.5}% 82
+\BOOKMARK [0][]{chapter.6}{6 设备}{part.3}% 83
+\BOOKMARK [1][]{section.6.1}{6.1 设备规范}{chapter.6}% 84
+\BOOKMARK [2][]{subsection.6.1.1}{6.1.1 形式化}{section.6.1}% 85
+\BOOKMARK [2][]{subsection.6.1.2}{6.1.2 上下文管理器}{section.6.1}% 86
+\BOOKMARK [2][]{subsection.6.1.3}{6.1.3 设备函数}{section.6.1}% 87
+\BOOKMARK [0][]{chapter.7}{7 会话}{part.3}% 88
+\BOOKMARK [1][]{section.7.1}{7.1 资源管理}{chapter.7}% 89
+\BOOKMARK [2][]{subsection.7.1.1}{7.1.1 关闭会话}{section.7.1}% 90
+\BOOKMARK [2][]{subsection.7.1.2}{7.1.2 上下文管理器}{section.7.1}% 91
+\BOOKMARK [2][]{subsection.7.1.3}{7.1.3 图实例}{section.7.1}% 92
+\BOOKMARK [1][]{section.7.2}{7.2 默认会话}{chapter.7}% 93
+\BOOKMARK [2][]{subsection.7.2.1}{7.2.1 张量求值}{section.7.2}% 94
+\BOOKMARK [2][]{subsection.7.2.2}{7.2.2 OP运算}{section.7.2}% 95
+\BOOKMARK [2][]{subsection.7.2.3}{7.2.3 线程相关}{section.7.2}% 96
+\BOOKMARK [1][]{section.7.3}{7.3 会话类型}{chapter.7}% 97
+\BOOKMARK [2][]{subsection.7.3.1}{7.3.1\040Session}{section.7.3}% 98
+\BOOKMARK [2][]{subsection.7.3.2}{7.3.2\040InteractiveSession}{section.7.3}% 99
+\BOOKMARK [2][]{subsection.7.3.3}{7.3.3\040BaseSession}{section.7.3}% 100
+\BOOKMARK [0][]{chapter.8}{8 变量}{part.3}% 101
+\BOOKMARK [1][]{section.8.1}{8.1 实战：线性模型}{chapter.8}% 102
+\BOOKMARK [1][]{section.8.2}{8.2 初始化模型}{chapter.8}% 103
+\BOOKMARK [2][]{subsection.8.2.1}{8.2.1 操作变量}{section.8.2}% 104
+\BOOKMARK [2][]{subsection.8.2.2}{8.2.2 初始值}{section.8.2}% 105
+\BOOKMARK [2][]{subsection.8.2.3}{8.2.3 初始化器}{section.8.2}% 106
+\BOOKMARK [2][]{subsection.8.2.4}{8.2.4 快照}{section.8.2}% 107
+\BOOKMARK [2][]{subsection.8.2.5}{8.2.5 变量子图}{section.8.2}% 108
+\BOOKMARK [2][]{subsection.8.2.6}{8.2.6 初始化过程}{section.8.2}% 109
+\BOOKMARK [2][]{subsection.8.2.7}{8.2.7 同位关系}{section.8.2}% 110
+\BOOKMARK [2][]{subsection.8.2.8}{8.2.8 初始化依赖}{section.8.2}% 111
+\BOOKMARK [2][]{subsection.8.2.9}{8.2.9 初始化器列表}{section.8.2}% 112
+\BOOKMARK [1][]{section.8.3}{8.3 变量分组}{chapter.8}% 113
+\BOOKMARK [2][]{subsection.8.3.1}{8.3.1 全局变量}{section.8.3}% 114
+\BOOKMARK [2][]{subsection.8.3.2}{8.3.2 本地变量}{section.8.3}% 115
+\BOOKMARK [2][]{subsection.8.3.3}{8.3.3 训练变量}{section.8.3}% 116
+\BOOKMARK [2][]{subsection.8.3.4}{8.3.4\040global_step}{section.8.3}% 117
+\BOOKMARK [1][]{section.8.4}{8.4 源码分析：构造变量}{chapter.8}% 118
+\BOOKMARK [2][]{subsection.8.4.1}{8.4.1 构造初始值}{section.8.4}% 119
+\BOOKMARK [2][]{subsection.8.4.2}{8.4.2 构造变量OP}{section.8.4}% 120
+\BOOKMARK [2][]{subsection.8.4.3}{8.4.3 构造初始化器}{section.8.4}% 121
+\BOOKMARK [2][]{subsection.8.4.4}{8.4.4 构造快照}{section.8.4}% 122
+\BOOKMARK [2][]{subsection.8.4.5}{8.4.5 变量分组}{section.8.4}% 123
+\BOOKMARK [0][]{chapter.9}{9 队列}{part.3}% 124
+\BOOKMARK [1][]{section.9.1}{9.1 队列}{chapter.9}% 125
+\BOOKMARK [2][]{subsection.9.1.1}{9.1.1\040FIFOQueue}{section.9.1}% 126
+\BOOKMARK [2][]{subsection.9.1.2}{9.1.2 用途}{section.9.1}% 127
+\BOOKMARK [1][]{section.9.2}{9.2 协调器}{chapter.9}% 128
+\BOOKMARK [2][]{subsection.9.2.1}{9.2.1 使用方法}{section.9.2}% 129
+\BOOKMARK [2][]{subsection.9.2.2}{9.2.2 异常处理}{section.9.2}% 130
+\BOOKMARK [2][]{subsection.9.2.3}{9.2.3 实战：LoopThread}{section.9.2}% 131
+\BOOKMARK [1][]{section.9.3}{9.3\040QueueRunner}{chapter.9}% 132
+\BOOKMARK [2][]{subsection.9.3.1}{9.3.1 注册QueueRunner}{section.9.3}% 133
+\BOOKMARK [2][]{subsection.9.3.2}{9.3.2 执行QueueRunner}{section.9.3}% 134
+\BOOKMARK [2][]{subsection.9.3.3}{9.3.3 关闭队列}{section.9.3}% 135
+\BOOKMARK [-1][]{part.4}{IV 运行模型}{}% 136
+\BOOKMARK [0][]{chapter.10}{10 分布式TensorFlow}{part.4}% 137
+\BOOKMARK [1][]{section.10.1}{10.1 运行模式}{chapter.10}% 138
+\BOOKMARK [2][]{subsection.10.1.1}{10.1.1 本地模式}{section.10.1}% 139
+\BOOKMARK [2][]{subsection.10.1.2}{10.1.2 分布式模式}{section.10.1}% 140
+\BOOKMARK [1][]{section.10.2}{10.2 领域模型}{chapter.10}% 141
+\BOOKMARK [2][]{subsection.10.2.1}{10.2.1\040Cluster}{section.10.2}% 142
+\BOOKMARK [2][]{subsection.10.2.2}{10.2.2\040Job}{section.10.2}% 143
+\BOOKMARK [2][]{subsection.10.2.3}{10.2.3\040Task}{section.10.2}% 144
+\BOOKMARK [2][]{subsection.10.2.4}{10.2.4\040Server}{section.10.2}% 145
+\BOOKMARK [2][]{subsection.10.2.5}{10.2.5\040Master\040Service}{section.10.2}% 146
+\BOOKMARK [2][]{subsection.10.2.6}{10.2.6\040Worker\040Service}{section.10.2}% 147
+\BOOKMARK [1][]{section.10.3}{10.3 组建集群}{chapter.10}% 148
+\BOOKMARK [2][]{subsection.10.3.1}{10.3.1\040ClusterSpec}{section.10.3}% 149
+\BOOKMARK [2][]{subsection.10.3.2}{10.3.2 Protobuf描述}{section.10.3}% 150
+\BOOKMARK [1][]{section.10.4}{10.4\040Server}{chapter.10}% 151
+\BOOKMARK [2][]{subsection.10.4.1}{10.4.1 领域模型}{section.10.4}% 152
+\BOOKMARK [2][]{subsection.10.4.2}{10.4.2 Protobuf描述}{section.10.4}% 153
+\BOOKMARK [2][]{subsection.10.4.3}{10.4.3 服务互联}{section.10.4}% 154
+\BOOKMARK [-1][]{part.5}{V 模型训练}{}% 155
+\BOOKMARK [0][]{chapter.11}{11 BP算法}{part.5}% 156
+\BOOKMARK [1][]{section.11.1}{11.1 TensorFlow实现}{chapter.11}% 157
+\BOOKMARK [2][]{subsection.11.1.1}{11.1.1 计算梯度}{section.11.1}% 158
+\BOOKMARK [2][]{subsection.11.1.2}{11.1.2 应用梯度}{section.11.1}% 159
+\BOOKMARK [0][]{chapter.12}{12 数据加载}{part.5}% 160
+\BOOKMARK [1][]{section.12.1}{12.1 数据注入}{chapter.12}% 161
+\BOOKMARK [1][]{section.12.2}{12.2 数据预加载}{chapter.12}% 162
+\BOOKMARK [2][]{subsection.12.2.1}{12.2.1 使用Const}{section.12.2}% 163
+\BOOKMARK [2][]{subsection.12.2.2}{12.2.2 使用Variable}{section.12.2}% 164
+\BOOKMARK [2][]{subsection.12.2.3}{12.2.3 批次预加载}{section.12.2}% 165
+\BOOKMARK [1][]{section.12.3}{12.3 数据管道}{chapter.12}% 166
+\BOOKMARK [2][]{subsection.12.3.1}{12.3.1 构建文件名队列}{section.12.3}% 167
+\BOOKMARK [2][]{subsection.12.3.2}{12.3.2 读取器}{section.12.3}% 168
+\BOOKMARK [2][]{subsection.12.3.3}{12.3.3 解码器}{section.12.3}% 169
+\BOOKMARK [2][]{subsection.12.3.4}{12.3.4 构建样本队列}{section.12.3}% 170
+\BOOKMARK [2][]{subsection.12.3.5}{12.3.5 输入子图}{section.12.3}% 171
+\BOOKMARK [1][]{section.12.4}{12.4 数据协同}{chapter.12}% 172
+\BOOKMARK [2][]{subsection.12.4.1}{12.4.1 阶段1}{section.12.4}% 173
+\BOOKMARK [2][]{subsection.12.4.2}{12.4.2 阶段2}{section.12.4}% 174
+\BOOKMARK [2][]{subsection.12.4.3}{12.4.3 阶段3}{section.12.4}% 175
+\BOOKMARK [2][]{subsection.12.4.4}{12.4.4 Pipeline节拍}{section.12.4}% 176
+\BOOKMARK [0][]{chapter.13}{13\040Saver}{part.5}% 177
+\BOOKMARK [1][]{section.13.1}{13.1\040Saver}{chapter.13}% 178
+\BOOKMARK [2][]{subsection.13.1.1}{13.1.1 使用方法}{section.13.1}% 179
+\BOOKMARK [2][]{subsection.13.1.2}{13.1.2 文件功能}{section.13.1}% 180
+\BOOKMARK [2][]{subsection.13.1.3}{13.1.3 模型}{section.13.1}% 181
+\BOOKMARK [0][]{chapter.14}{14\040MonitoredSession}{part.5}% 182
+\BOOKMARK [1][]{section.14.1}{14.1 引入MonitoredSession}{chapter.14}% 183
+\BOOKMARK [2][]{subsection.14.1.1}{14.1.1 使用方法}{section.14.1}% 184
+\BOOKMARK [2][]{subsection.14.1.2}{14.1.2 使用工厂}{section.14.1}% 185
+\BOOKMARK [2][]{subsection.14.1.3}{14.1.3 装饰器}{section.14.1}% 186
+\BOOKMARK [1][]{section.14.2}{14.2 生命周期}{chapter.14}% 187
+\BOOKMARK [2][]{subsection.14.2.1}{14.2.1 初始化}{section.14.2}% 188
+\BOOKMARK [2][]{subsection.14.2.2}{14.2.2 执行}{section.14.2}% 189
+\BOOKMARK [2][]{subsection.14.2.3}{14.2.3 关闭}{section.14.2}% 190
+\BOOKMARK [1][]{section.14.3}{14.3 模型初始化}{chapter.14}% 191
+\BOOKMARK [2][]{subsection.14.3.1}{14.3.1 协调协议}{section.14.3}% 192
+\BOOKMARK [2][]{subsection.14.3.2}{14.3.2\040SessionManager}{section.14.3}% 193
+\BOOKMARK [2][]{subsection.14.3.3}{14.3.3 引入工厂}{section.14.3}% 194
+\BOOKMARK [2][]{subsection.14.3.4}{14.3.4\040Scaffold}{section.14.3}% 195
+\BOOKMARK [2][]{subsection.14.3.5}{14.3.5 初始化算法}{section.14.3}% 196
+\BOOKMARK [2][]{subsection.14.3.6}{14.3.6 本地变量初始化}{section.14.3}% 197
+\BOOKMARK [2][]{subsection.14.3.7}{14.3.7 验证模型}{section.14.3}% 198
+\BOOKMARK [1][]{section.14.4}{14.4 异常安全}{chapter.14}% 199
+\BOOKMARK [2][]{subsection.14.4.1}{14.4.1 上下文管理器}{section.14.4}% 200
+\BOOKMARK [2][]{subsection.14.4.2}{14.4.2 停止QueueRunner}{section.14.4}% 201
+\BOOKMARK [1][]{section.14.5}{14.5 回调钩子}{chapter.14}% 202
+\BOOKMARK [-1][]{part.6}{VI 附录}{}% 203
+\BOOKMARK [0][]{appendix.A}{A 代码阅读}{part.6}% 204
+\BOOKMARK [1][]{section.A.1}{A.1 工欲善其事，必先利其器}{appendix.A}% 205
+\BOOKMARK [1][]{section.A.2}{A.2 力行而后知之真}{appendix.A}% 206
+\BOOKMARK [1][]{section.A.3}{A.3 发现领域模型}{appendix.A}% 207
+\BOOKMARK [1][]{section.A.4}{A.4 挖掘系统架构}{appendix.A}% 208
+\BOOKMARK [1][]{section.A.5}{A.5 细节是魔鬼}{appendix.A}% 209
+\BOOKMARK [1][]{section.A.6}{A.6 适可而止}{appendix.A}% 210
+\BOOKMARK [1][]{section.A.7}{A.7 发现她的美}{appendix.A}% 211
+\BOOKMARK [1][]{section.A.8}{A.8 尝试重构}{appendix.A}% 212
+\BOOKMARK [1][]{section.A.9}{A.9 形式化}{appendix.A}% 213
+\BOOKMARK [1][]{section.A.10}{A.10 实例化}{appendix.A}% 214
+\BOOKMARK [1][]{section.A.11}{A.11 独乐乐，不如众乐乐}{appendix.A}% 215
+\BOOKMARK [0][]{appendix.B}{B 持续学习}{part.6}% 216
+\BOOKMARK [1][]{section.B.1}{B.1 说文解字}{appendix.B}% 217
+\BOOKMARK [2][]{subsection.B.1.1}{B.1.1 选择}{section.B.1}% 218
+\BOOKMARK [2][]{subsection.B.1.2}{B.1.2 抽象}{section.B.1}% 219
+\BOOKMARK [2][]{subsection.B.1.3}{B.1.3 分享}{section.B.1}% 220
+\BOOKMARK [2][]{subsection.B.1.4}{B.1.4 领悟}{section.B.1}% 221
+\BOOKMARK [1][]{section.B.2}{B.2 成长之路}{appendix.B}% 222
+\BOOKMARK [2][]{subsection.B.2.1}{B.2.1 消除重复}{section.B.2}% 223
+\BOOKMARK [2][]{subsection.B.2.2}{B.2.2 提炼知识}{section.B.2}% 224
+\BOOKMARK [2][]{subsection.B.2.3}{B.2.3 成为习惯}{section.B.2}% 225
+\BOOKMARK [2][]{subsection.B.2.4}{B.2.4 更新知识}{section.B.2}% 226
+\BOOKMARK [2][]{subsection.B.2.5}{B.2.5 重构自我}{section.B.2}% 227
+\BOOKMARK [2][]{subsection.B.2.6}{B.2.6 专攻术业}{section.B.2}% 228

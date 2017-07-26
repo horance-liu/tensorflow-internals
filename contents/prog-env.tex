@@ -36,7 +36,7 @@ $ git checkout r1.2
 \end{python}
 \end{leftbar}
 
-\subsection{TensorFlow源码}
+\subsection{源码结构}
 
 可以运行如下命令，打印出\tf{}源码的组织结构。
 
@@ -148,7 +148,7 @@ Python编程接口的源码物理组织如下所示，它定义和实现了程�
 
 在构建\ascii{TensorFlow}前，需要事先准备构建环境。\ascii{TensorFlow}的前端是一个支持多语言的编程接口，后端是一个使用\ascii{C++}实现的执行系统。
 
-因此，编译\ascii{TensorFlow}源代码之前，需要事先安装前端系统所使用编程语言的编译器、解释器、及其运行时环境。例如，使用\asci{Python}的前端编程接口，需要事先安装\ascii{Python2}，或者\ascii{Python3}。下文以\ascii{Python2}为例，讲述环境准备过程；如果使用\ascii{Python3}，请查阅相关文档。
+因此，编译\ascii{TensorFlow}源代码之前，需要事先安装前端系统所使用编程语言的编译器、解释器、及其运行时环境。例如，使用\ascii{Python}的前端编程接口，需要事先安装\ascii{Python2}，或者\ascii{Python3}。下文以\ascii{Python2}为例，讲述环境准备过程；如果使用\ascii{Python3}，请查阅相关文档。
 
 其次，也需要事先安装\ascii{GCC, Clang}等\ascii{C++}的编译器，用于编译后端系统实现。本文将不再冗述这两个方面的环境安装过程。
 
@@ -294,7 +294,7 @@ Hello, TensorFlow!
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.9\textwidth]{figures/tf-stack.png}
+\includegraphics[width=0.7\textwidth]{figures/tf-stack.png}
 \caption{TensorFlow技术栈}}
  \label{fig:tf-stack}
 \end{figure}

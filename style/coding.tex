@@ -6,7 +6,7 @@
 \DeclareCaptionFont{red}{\color{red}}
 
 %% 所要粘贴代码的编程语言
-\lstloadlanguages{{[LaTeX]TeX}, {[ISO]C++}, {Java}, {Ruby}, {Python}}
+\lstloadlanguages{{[LaTeX]TeX}, {[ISO]C++}, {Java}, {Ruby}, {Python}, {Scala}}
 
 %% 设置listings宏包的一些全局样式
 %% 参考http://hi.baidu.com/shawpinlee/blog/item/9ec431cbae28e41cbe09e6e4.html
@@ -107,6 +107,24 @@ belowcaptionskip=1em
   {\setstretch{1}
   \lstset{style=Python, #1}}
   {}
+
+\lstdefinestyle{Scala}{
+   language=Scala,
+   texcl=true,
+   prebreak=\textbackslash,
+   breakindent=1em,
+   keywordstyle=\bfseries, %% 关键字高亮
+   morekeywords={}
+   style=numbers,
+   %frame=leftline,                     %% 给代码加框
+   %framerule=2pt,
+   %rulesep=5pt
+}
+
+\lstnewenvironment{scala}[1][]
+  {\setstretch{1}
+  \lstset{style=Scala, #1}}
+  {}  
 
 \renewcommand{\lstlistingname}{示例代码}
 \renewcommand\thefigure{\thechapter-\arabic{figure}}

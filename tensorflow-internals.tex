@@ -30,19 +30,20 @@
 
 \input{style/coding}
 
-\usepackage[
-  placement=center,
-  angle=45,
-  scale=4,
-  color=black!40,
-  %hshift=60,
-  %vshift=-5
-]{background}
+% \usepackage[
+%   placement=center,
+%   angle=45,
+%   scale=4,
+%   color=black!40,
+%   %hshift=60,
+%   %vshift=-5
+% ]{background}
 
-\backgroundsetup{contents={TensorFlow Internals}}
+% \backgroundsetup{contents={TensorFlow Internals}}
 %\backgroundsetup{contents={\includegraphics[width=0.2\textwidth]{figures/cock.jpg}}}
 
 \newcommand{\myclearpage}{\clearpage{\pagestyle{empty}\cleardoublepage}}
+\newcommand{\mydedicate}{\clearpage{\pagestyle{empty}\cleardedicatepage}}
 
 %%%% 导言区结束
 %%%%%%%%------------------------------------------------------------------------
@@ -51,26 +52,29 @@
 %%%% 正文部分
 
 \begin{document}
+
 \frontmatter
 \pagestyle{empty}
 
 %%自定义封面
 \def\titlename{TensorFlow内核剖析}
 \def\subtitle{TensorFlow Internals}
-\def\authors{刘光聪}
-\def\orgnization{\ascii{ZTE \textcopyright 2014}}
+\def\authors{刘光聪\ 著}
+% \def\orgnization{\ascii{ZTE \textcopyright 2014}}
 
-% \input{style/title}
-% \myclearpage
+\input{style/title}
+\myclearpage
 
-% % \input{contents/foreword}
-% % \myclearpage
+\mydedicate
 
-% \input{contents/preface}
-% \myclearpage
+\input{contents/foreword}
+\myclearpage
 
-% \tableofcontents
-% \myclearpage
+\input{contents/preface}
+\myclearpage
+
+\tableofcontents
+\myclearpage
 
 \def\thelstlisting{\thechapter-\arabic{lstlisting}}
 %% 中文习惯是设定首行缩进为2em。
@@ -83,30 +87,48 @@
 \setcounter{page}{1}
 \pagestyle{fancy}
 
-% \input{contents/introduction}
-% \input{contents/prog-env}
-% \input{contents/architecture}
-% \input{contents/graph}
-% \input{contents/device}
-% \input{contents/session}
-% \input{contents/variable}
-% \input{contents/queue}
+\part{基础知识}
+\input{contents/introduction}
+\input{contents/prog-env}
+
+\part{系统架构}
+\input{contents/architecture}
+\input{contents/c-api}
+
+\part{编程模型}
+\input{contents/graph}
+\input{contents/device}
+\input{contents/session}
+\input{contents/variable}
+\input{contents/queue}
+
+\part{运行模型}
+\input{contents/distributed}
+
+\part{模型训练}
+\input{contents/bp}
 \input{contents/input-pipeline}
-% \input{contents/saver}
-% \input{contents/monitored-session}
+\input{contents/saver}
+\input{contents/monitored-session}
+
+%%%%%%%%%%%%%%%%%%%％%%
+\appendix
+
+\part{附录}
+\input{contents/code-reading}
+\input{contents/learning}
 
 %%%%%%%%%%%%%%%%%%%％%%
 \backmatter
 %\listoffigures
 %\myclearpage
+
 %\listoftables
 %\myclearpage
 
-%\include{contents/appendix}	
-
-% %% 加入参考文献支持
-% \bibliographystyle{alpha}
-% \bibliography{contents/ref}
+%% 加入参考文献支持
+\bibliographystyle{alpha}
+\input{contents/biblio}
 
 \end{document}
 %%%% 正文部分结束
