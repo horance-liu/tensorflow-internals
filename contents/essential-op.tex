@@ -94,10 +94,6 @@ Status OpRegistry::Register(
       op_reg_data->op_def.name(),
       op_reg_data.get())
   }
-  Status watcher_status = s;
-  if (watcher_) {
-    watcher_status = watcher_(s, op_reg_data->op_def);
-  }
   if (s.ok()) {
     op_reg_data.release();
   } else {
