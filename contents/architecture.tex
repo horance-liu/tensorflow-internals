@@ -213,11 +213,11 @@
 
 \begin{leftbar}
   \begin{python}
-def run_graph(feeds):
-  rendezvous.send(feeds)
-  for p in partitions: 
-    executor.run(p)
-  rendezvous.recv(fetches)
+def run_partitions(rendezvous, execs_and_parts, inputs, outputs):
+  rendezvous.send(inputs)
+  for (exec, part) in execs_and_parts: 
+    exec.run(part)
+  rendezvous.recv(outputs)
   \end{python}
 \end{leftbar}
 
