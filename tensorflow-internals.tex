@@ -33,14 +33,14 @@
 % \usepackage[
 %   placement=center,
 %   angle=45,
-%   scale=4,
+%   scale=20,
 %   color=black!40,
 %   %hshift=60,
 %   %vshift=-5
 % ]{background}
 
-% \backgroundsetup{contents={TensorFlow Internals}}
-%\backgroundsetup{contents={\includegraphics[width=0.2\textwidth]{figures/cock.jpg}}}
+% \backgroundsetup{contents={样章}}
+% \backgroundsetup{contents={\includegraphics[width=0.2\textwidth]{figures/cock.jpg}}}
 
 \newcommand{\myclearpage}{\clearpage{\pagestyle{empty}\cleardoublepage}}
 \newcommand{\mydedicate}{\clearpage{\pagestyle{empty}\cleardedicatepage}}
@@ -60,7 +60,7 @@
 \def\titlename{TensorFlow内核剖析}
 \def\subtitle{TensorFlow Internals}
 \def\authors{刘光聪\ 著}
-% \def\orgnization{\ascii{ZTE \textcopyright 2014}}
+% \def\orgnization{\ascii{}}
 
 % \input{style/title}
 % \myclearpage
@@ -84,8 +84,8 @@
 %%%%%%%%%%%%%%%%%%%%%%
 %%开始正文，页面计数从正文开始
 \mainmatter
-\setcounter{page}{1}
-\pagestyle{fancy}
+% \setcounter{page}{1}
+% \pagestyle{fancy}
 
 % \part{基础知识}
 % \input{contents/introduction}
@@ -105,8 +105,8 @@
 % \input{contents/essential-op}
 
 % \part{运行模型}
-\input{contents/local}
-% \input{contents/distributed}
+% \input{contents/local}
+\input{contents/distributed}
 
 % \part{模型训练}
 % \input{contents/bp}
@@ -114,22 +114,22 @@
 % \input{contents/saver}
 % \input{contents/monitored-session}
 
-%%%%%%%%%%%%%%%%%%%％%%
+% %%%%%%%%%%%%%%%%%%％%%
 % \appendix
 
 % \part{附录}
 % \input{contents/code-reading}
 % \input{contents/learning}
 
-%%%%%%%%%%%%%%%%%%%％%%
+% %%%%%%%%%%%%%%%%%%％%%
 % \backmatter
-%\listoffigures
-%\myclearpage
+% % %\listoffigures
+% % %\myclearpage
 
-%\listoftables
-%\myclearpage
+% % %\listoftables
+% % %\myclearpage
 
-%% 加入参考文献支持
+% % 加入参考文献支持
 % \bibliographystyle{alpha}
 % \input{contents/biblio}
 
