@@ -103,11 +103,7 @@ TensorFlow可以运行在分布式环境中，完成计算图的执行过程。�
 
 \ascii{Server}表示\ascii{Task}的服务进程，它对外提供\code{MasterService}和\code{WorkerService}服务。也就是说，\ascii{Server}可以同时扮演\ascii{Master}和\ascii{Worker}两种角色。
 
-\end{content}
-
-\section{组建集群}
-
-\begin{content}
+\subsection{组建集群}
 
 为每个\ascii{Task}创建一个\ascii{Server}，并启动相应的\ascii{Server}服务，如此便很容易地组建了一个\ascii{TensorFlow}集群。也就是说，组建\ascii{TensorFlow}集群包括两个基本步骤：
 
@@ -116,7 +112,7 @@ TensorFlow可以运行在分布式环境中，完成计算图的执行过程。�
   \eitem{对于每一个\ascii{Task}，启动一个\code{tf.train.Server}实例。}
 \end{enum}
 
-\subsection{ClusterSpec}
+\subsubsection{集群配置}
 
 \code{ClusterSpec}描述了集群中\ascii{Task}的部署信息，并以\ascii{Job}的方式组织。一般地，在分布式的执行模式中，为每个\ascii{Task}启动一个进程；因此，\code{ClusterSpec}同时也描述了\ascii{TensorFlow}分布式运行时的进程分布情况。
 
@@ -139,7 +135,7 @@ tf.train.ClusterSpec({
 
 在此例中，未显式地指定\ascii{Task}的索引。默认地，一个\ascii{Job}的\ascii{Task}集合中，\ascii{Task}索引从\ascii{0}开始按序自增的。
 
-\subsection{Protobuf描述}
+\subsubsection{Protobuf描述}
 
 \begin{leftbar}
 \begin{python}
@@ -166,22 +162,24 @@ message ClusterDef {
 
 \subsection{领域模型}
 
-一般地，一个\ascii{Task}实例上启动一个\ascii{Server}实例。因此，一个\ascii{Server}实例通过\code{job\_name, task\_index}唯一标识，它与\ascii{Task}实例一一对应。
+如\refig{cc-server-model}所示，\code{GrpcServer}可以扮演\ascii{Master}的角色，对外提供\code{MasterService}服务；其中，它为每一个接入的\ascii{Client}生成唯一的\code{MasterSession}实例。
 
-另外，一个\ascii{Server}实例通过\code{ClusterSpec}与集群中其他的\ascii{Server}实例实现服务互联。
+\code{GrpcServer}可以扮演\ascii{Worker}的角色，对外提供\code{WorkerService}服务；其中，每个\ascii{Worker}可以为多个\ascii{Master}提供计算服务，它为每个向它请求计算服务的\ascii{MasterSession}生成唯一的\code{WorkerSession}实例，等待相应的\ascii{MasterSession}下发计算图的注册和执行命令。
+
+整个\code{GrpcServer}实例承载于\code{grpc::Server}进程之上，它监听特定端口的消息，当消息到达时自动派发到\code{MasterService}或\code{WorkerService}中的回调函数处理。
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=1.0\textwidth]{figures/cc-server-model.png}
-\caption{Server架构}
+\caption{Server领域模型}
  \label{fig:cc-server-model}
 \end{figure}
 
-\subsection{Protobuf描述}
+\subsubsection{Protobuf描述}
 
 当\code{protocol}为\code{grpc}时，系统运行时将启用基于\ascii{gRPC}实现的\code{GrpcServer}实例。此外，可以通过\code{ConfigProto}实现运行时参数的配置。
 
-也就是说，\tf{}的架构是可以灵活地扩展。例如，通过扩展\code{protocol}支持新的通信协议，你只需扩展实现基于新协议的\code{Server}实例。
+也就是说，\tf{}的架构是可以灵活地扩展。例如，通过扩展\code{protocol}支持新的通信协议，只需扩展实现基于新协议的\code{Server}实例。
 
 \begin{leftbar}
 \begin{python}
@@ -197,35 +195,299 @@ message ServerDef {
 \end{python}
 \end{leftbar}
 
-\subsection{服务互联}
+\subsubsection{服务互联}
 
-一个\ascii{Server}实例通过\code{tf.train.ClusterSpec}与集群中的其他\ascii{Server}实例实现互联。
+如\refig{cc-server-interact}所示，一个\ascii{Server}实例通过\code{tf.train.ClusterSpec}与集群中的其他\ascii{Server}实例实现互联。
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.6\textwidth]{figures/cc-server-interact.png}
+\includegraphics[width=0.5\textwidth]{figures/cc-server-interact.png}
 \caption{服务互联}
  \label{fig:cc-server-interact}
 \end{figure}
 
-当客户端接入其中一个\ascii{Server}，此时它扮演了\ascii{Master}的角色，其他\ascii{Server}则扮演了\ascii{Worker}的角色。
-
-在分布式的深度学习模式训练过程中，可能存在多个\ascii{Client}分别接入不同的\ascii{Server}实例。此时，\ascii{Client}接入的\ascii{Server}实例扮演了\ascii{Master}角色；但是，该\ascii{Server}实例，相对于集群中另外的\ascii{Server}实例，则扮演了\ascii{Worker}角色。
+如\refig{cc-server-interact-1}所示，当客户端接入其中一个\ascii{Server}，此时它扮演了\ascii{Master}的角色，其他\ascii{Server}则扮演了\ascii{Worker}的角色。
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.6\textwidth]{figures/cc-server-interact-2.png}
-\caption{多客户端接入}
+\includegraphics[width=0.5\textwidth]{figures/cc-server-interact-1.png}
+\caption{单Client接入集群}
+ \label{fig:cc-server-interact-1}
+\end{figure}
+
+如\refig{cc-server-interact-2}所示，在分布式的深度学习模式训练过程中，可能存在多个\ascii{Client}分别接入不同的\ascii{Server}实例。此时，\ascii{Client}接入的\ascii{Server}实例扮演了\ascii{Master}角色；但是，该\ascii{Server}实例，相对于集群中另外的\ascii{Server}实例，则扮演了\ascii{Worker}角色。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{figures/cc-server-interact-2.png}
+\caption{多Client接入集群}
  \label{fig:cc-server-interact-2}
 \end{figure}
 
 特殊地，\ascii{Client}与\ascii{Master}可以部署在同一个进程内。此时，\ascii{Client}与\ascii{Master}之间的交互更加简单，两者直接使用函数调用，避免了\ascii{gRPC}交互的额外开销。
 
+依次类推，在同一个\ascii{Server}内，\ascii{Master}与\ascii{Worker}部署在同一进程内。此时，\ascii{Master}与\ascii{Worker}之间直接使用函数调用。
+
+\subsection{状态机}
+
+如\refig{dist-grpc-server-state-machine}所示，\code{GrpcServer}是一个基于\code{grpc::Server}的服务器，它管理和维护了一个简单的状态机。
+
+其中，在\code{New}状态上启动了\code{grpc::Server}服务，在\code{Started}状态上对外提供\code{MasterService}和\code{WorkerService}的\code{RPC}消息服务，并最终在\code{Stopped}状态下停止\code{MasterService}和\code{WorkerService}服务。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{figures/dist-grpc-server-state-machine.png}
+\caption{GrpcServer状态机}
+ \label{fig:dist-grpc-server-state-machine}
+\end{figure}
+
+\subsubsection{创建服务}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{figures/dist-grpc-server-factory.png}
+\caption{多态创建Server实例}
+ \label{fig:dist-grpc-server-factory}
+\end{figure}
+
+\begin{leftbar}
+\begin{c++}
+struct GrpcServerFactory : ServerFactory {
+  bool AcceptsOptions(const ServerDef& server_def) override {
+    return server_def.protocol() == "grpc";
+  }
+
+  Status NewServer(const ServerDef& server_def,
+      std::unique_ptr<ServerInterface>* out_server) override {
+    GrpcServer::Create(server_def, Env::Default(), out_server);
+    return Status::OK();
+  }
+};
+\end{c++}
+\end{leftbar}
+
+\begin{leftbar}
+\begin{c++}
+void GrpcServer::Create(
+    const ServerDef& server_def, Env* env,
+    std::unique_ptr<ServerInterface>* out_server) {
+  auto ret = std::make_unique<GrpcServer>(server_def, env);
+  ret->Init();
+  *out_server = std::move(ret);
+}
+\end{c++}
+\end{leftbar}
+
+如\refig{cc-server-model}所示，\code{GrpcServer::Init}将完成\code{GrpcServer}领域对象的初始化，主要包括如下\ascii{3}个基本过程。
+
+\begin{enum}
+  \eitem{初始化\code{MasterEnv}实例；}  
+  \eitem{初始化\code{WorkerEnv}实例；}  
+  \eitem{创建并启动\code{grpc::Server}}    
+    \begin{enum}
+    \eitem{初始化\code{MasterService}}      
+    \begin{nitemize}
+      \eitem{创建\code{Master}实例；}  
+      \eitem{创建\code{MasterService}实例；}
+    \end{nitemize}
+    \eitem{初始化\code{WorkerService}}          
+    \begin{nitemize}          
+      \eitem{创建\code{Worker}实例；}  
+      \eitem{创建\code{WorkerService}实例。}
+    \end{nitemize}      
+    \end{enum}
+\end{enum}
+
+为了更好地理解整个\code{GrpcServer}实例的初始化过程，此处做了局部的重构。首先，它初始化\code{MasterEnv, WorkerEnv}实例；然后，创建并启动\code{grpc::Server}服务器。其中，初始化\code{MasterEnv/WorkerEnv}，就是完成\code{MasterEnv/WorkerEnv}对象的构造过程，在此不再冗述。重点探究一下\code{grpc::Server}实例的构建和启动过程。
+
+\begin{leftbar}
+\begin{c++}
+void GrpcServer::Init() {
+  InitMasterEnv();
+  InitWorkerEnv();
+  StartGrpcServer();
+}
+\end{c++}
+\end{leftbar}
+
+实现使用构建器创建\code{grpc::Server}实例。首先，配置\code{grpc::Server}的服务选项；然后，分别构建\code{MasterService}实例和\code{WorkerService}实例。最后，调用\code{builder.BuildAndStart}方法启动\code{grpc::Server}服务器。
+
+需要注意的是，\code{grpc::Server}启动时，\code{GrpcServer}依然处于\code{New}状态，
+\code{grpc::Server}暂时还未对外提供\code{MasterService}服务和\code{WorkerService}服务。直至\code{GrpcServer}迁移至\code{Started}状态位置，\code{grpc::Server}才真正对外提供\code{MasterService}服务和\code{WorkerService}服务。
+
+\begin{leftbar}
+\begin{c++}
+void InitServerBuilder(::grpc::ServerBuilder& builder) {
+  builder.AddListeningPort(
+    strings::StrCat("0.0.0.0:", GetRequestedPort()),
+    GetServerCredentials(server_def_), &bound_port_);
+  builder.SetMaxMessageSize(std::numeric_limits<int32>::max());
+  builder.SetOption(
+      std::unique_ptr<::grpc::ServerBuilderOption>(new NoReusePortOption));
+}
+
+void GrpcServer::StartGrpcServer() {
+  ::grpc::ServerBuilder builder;
+
+  InitServerBuilder(builder);
+  InitMasterService(builder);
+  InitWorkerService(builder);
+
+  server_ = builder.BuildAndStart();  
+}
+\end{c++}
+\end{leftbar}
+
+很容易发现，\code{grpc::Server}对外提供\code{MasterService}服务的实体是\code{GrpcMasterService}实例。当消息到达时，将自动回调\code{GrpcMasterService}实例中相应的消息处理函数。其中，在消息处理函数中，其业务逻辑的处理完全依托于\code{Master}的领域对象。
+
+\begin{leftbar}
+\begin{c++}
+std::unique_ptr<Master> GrpcServer::CreateMaster(
+    MasterEnv* master_env) {
+  return std::make_unique<Master>(master_env);
+}
+
+AsyncServiceInterface* NewGrpcMasterService(
+    Master* master, ::grpc::ServerBuilder* builder) {
+  return new GrpcMasterService(master, builder);
+}
+
+void GrpcServer::InitMasterService() {
+  master_impl_ = CreateMaster(&master_env_);
+  master_service_ = NewGrpcMasterService(
+      master_impl_.get(), &builder);  
+}
+\end{c++}
+\end{leftbar}
+
+依次类推，\code{grpc::Server}对外提供\code{WorkerService}服务的实体是\code{GrpcWorkerService}实例。当消息到达时，将自动回调\code{GrpcWorkerService}实例中相应的消息处理函数。其中，在消息处理函数中，其业务逻辑的处理完全依托于\code{GrpcWorker}的领域对象。
+
+\begin{leftbar}
+\begin{c++}
+std::unique_ptr<GrpcWorker> NewGrpcWorker(WorkerEnv* env) {
+  return std::unique_ptr<GrpcWorker>(new GrpcWorker(env));
+}
+
+AsyncServiceInterface* NewGrpcWorkerService(
+    GrpcWorker* worker, ::grpc::ServerBuilder* builder) {
+  return new GrpcWorkerService(worker, builder);
+}
+
+void GrpcServer::InitWorkerService(::grpc::ServerBuilder& builder) {
+  worker_impl_ = NewGrpcWorker(&worker_env_);
+  worker_service_ = NewGrpcWorkerService(
+    worker_impl_.get(), &builder);
+}
+\end{c++}
+\end{leftbar}
+
+\subsubsection{启动服务}
+
+此刻，\code{grpc::Server}已经启动，但暂时没有对外提供\code{MasterService}服务和\code{WorkerService}服务。通过调用\code{GrpcServer::Start}方法后，\code{GrpcServer}的状态从\code{New}迁移\code{Started}状态，并启动了两个独立的线程，分别启动\code{MasterService}和\code{WorkerService}的消息处理器。
+
+\begin{leftbar}
+\begin{c++}
+Status GrpcServer::Start() {
+  mutex_lock l(mu_);
+  switch (state_) {
+    case NEW: {
+      master_thread_.reset(
+          env_->StartThread(ThreadOptions(), "TF_master_service",
+                            [this] { master_service_->HandleRPCsLoop(); }));
+      worker_thread_.reset(
+          env_->StartThread(ThreadOptions(), "TF_worker_service",
+                            [this] { worker_service_->HandleRPCsLoop(); }));
+      state_ = STARTED;
+      return Status::OK();
+    }
+    case STARTED:
+      LOG(INFO) << "Server already started(" << target() << ")";    
+      return Status::OK();
+    case STOPPED:
+    default:
+      CHECK(false);
+  }
+}
+\end{c++}
+\end{leftbar}
+
+\subsubsection{等待终止服务}
+
+为了持久地对外提供\code{MasterService}服务和\code{WorkerService}服务，需要分别对线程\code{TF\_master\_service}和\code{TF\_worker\_service}实施\code{join}操作，使得主线程挂起，直至这两个线程终止。
+
+上述过程，通过调用\code{GrpcServer::Join}方法实现，当\code{GrpcServer}处于\code{Started}或\code{Stoped}状态，它将自动调用\code{Thread}的析构函数。
+
+\begin{leftbar}
+\begin{c++}
+Status GrpcServer::Join() {
+  mutex_lock l(mu_);
+  switch (state_) {
+    case NEW:
+      // Prevent the server from being started subsequently.
+      state_ = STOPPED;
+      return Status::OK();
+    case STARTED:
+    case STOPPED:
+      master_thread_.reset();
+      worker_thread_.reset();
+      return Status::OK();
+    default:
+      CHECK(false);
+  }
+}
+\end{c++}
+\end{leftbar}
+
+例如，基于\code{C++}标准库实现的\code{StdThread}中，其析构函数将调用\code{std::thread}的\code{join}方法。
+
+\begin{leftbar}
+\begin{c++}
+struct StdThread : Thread {
+  StdThread(const ThreadOptions&, const string&, 
+      std::function<void()> fn)
+    : thread_(fn) {
+  }
+
+  ~StdThread() override { 
+    thread_.join(); 
+  }
+
+ private:
+  std::thread thread_;
+};
+\end{c++}
+\end{leftbar}
+
+\subsubsection{终止服务}
+
+遗憾的是，目前\code{GrpcServer}并不能优雅地退出。因此，在工程实践环境中，\tf{}的分布式运行时常常需要借助于\code{Kubernetes}，实现\code{GrpcServer}服务的自动管理。
+
+\begin{leftbar}
+\begin{c++}
+Status GrpcServer::Stop() {
+  mutex_lock l(mu_);
+  switch (state_) {
+    case NEW:
+      state_ = STOPPED;
+      return Status::OK();
+    case STARTED:
+      return errors::Unimplemented(
+          "Clean shutdown is not currently implemented");
+    case STOPPED:
+      LOG(INFO) << "Server already stopped(" << target() << ")";
+      return Status::OK();
+    default:
+      CHECK(false);
+  }
+}
+\end{c++}
+\end{leftbar}
+
 \section{Master服务}
 
 \begin{content}
 
-\ascii{Master Service}是一个\ascii{RPC}服务。当\ascii{Client}根据\code{target}接入\ascii{Server}实例，\ascii{Server}扮演了\ascii{Master}的角色，对外提供\code{MasterService}服务。其中，\ascii{Client}与\ascii{Master}之间的交互遵循\code{MasterService}的接口规范。
+\code{MasterService}是一个\ascii{RPC}服务。当\ascii{Client}根据\code{target}接入\ascii{Server}实例后，\ascii{Server}扮演了\ascii{Master}的角色，对外提供\code{MasterService}服务。其中，\ascii{Client}与\ascii{Master}之间的交互遵循\code{MasterService}定义的接口规范。
 
 也就是说，\code{MasterService}定义了接入\ascii{Master}的契约，它定义在\code{master\_service.proto}文件中，负责协调和控制多个\code{WorkerService}的执行过程。
 
@@ -354,7 +616,7 @@ struct MasterInterface {
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\textwidth]{figures/dist-master-interface.png}
+\includegraphics[width=0.6\textwidth]{figures/dist-master-interface.png}
 \caption{\code{MasterInterface}}
  \label{fig:dist-master-interface}
 \end{figure}
@@ -522,9 +784,7 @@ message CloseSessionResponse {
 
 \ascii{Master}根据\code{ClusterSpec}信息，找到集群中其他的\ascii{Server}实例，此时这些\ascii{Server}实例将扮演\ascii{Worker}的角色；\ascii{Master}将子图分发给各个\ascii{Worker}节点，并启动各个\ascii{Worker}节点的子图计算的执行过程。
 
-如果\ascii{Worker}之间存在数据依赖，则通过进程间通信完成交互。其中，\ascii{Master}与\ascii{Worker}之间，\ascii{Worker}与\ascii{Worker}之间的交互遵循\ascii{Worker Service}的接口规范。
-
-特殊地，\ascii{Master}与本地的\ascii{Worker}也可能在同一进程中。
+如果\ascii{Worker}之间存在数据依赖，则通过进程间通信完成交互。其中，\ascii{Master}与\ascii{Worker}之间，\ascii{Worker}与\ascii{Worker}之间的交互遵循\ascii{Worker Service}定义的接口规范。
 
 \subsection{接口定义}
 
