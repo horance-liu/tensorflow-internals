@@ -653,7 +653,7 @@ stub->CloseSession({handle})
 
 \subsection{消息定义}
 
-接下来，将详细看看各个接口的消息定义，其中，最终得就是识别出各个服务的标识；例如，\ascii{Client}端的\code{GrpcSession}持有远端\ascii{Master}中的\code{MasterSession}句柄，\ascii{Master}以此作为服务该\ascii{Client}的唯一标识。
+接下来，将详细看看各个接口的消息定义。其中，最重要的就是识别出各个服务的标识。例如，\ascii{Master}可以供多个\ascii{Client}接入，并为每个\ascii{Client}生成对应的\code{MasterSession}实例。因此\code{GrpcSession}持有\code{MasterSession}句柄，实现\ascii{Client}获取\ascii{Master}的服务。
 
 \subsubsection{CreateSession}
 
@@ -685,7 +685,7 @@ message CreateSessionResponse {
 \end{c++}
 \end{leftbar}
 
-\subsection{ExtendSession}
+\subsubsection{ExtendSession}
 
 当\ascii{CreateSession}成功后，后续\ascii{Client}可以通过\code{ExtendSession}，携带待扩展的子图给\ascii{Master}，增加原有计算图的规模。
 
@@ -723,7 +723,7 @@ message ExtendSessionResponse {
 \end{c++}
 \end{leftbar}
 
-\subsection{RunStep}
+\subsubsection{RunStep}
 
 一般地，在客户端迭代地执行\code{RunStep}。如\refig{dist-ms-run-step-req}所示，在每一次\code{RunStep}执行过程中，\ascii{Client}在请求消息中携带\code{inputs, outputs\_names, targets}，分别表示输入的\ascii{Tensor}的名称列表，待输出的\ascii{Tensor}的名称列表，待执行的\ascii{OP}的名称列表；在响应消息中携带\code{outputs}，表示输出的\ascii{Tensor}列表。
 
@@ -754,7 +754,7 @@ message RunStepResponse {
 \end{c++}
 \end{leftbar}
 
-\subsection{CloseSession}
+\subsubsection{CloseSession}
 
 当计算完成后，需要关闭系统资源。如\refig{dist-ms-closs-sess}所示，\ascii{Client}通过发送\code{CloseSession}给\ascii{Master}，启动计算资源的释放过程。
 
@@ -1013,18 +1013,212 @@ struct WorkerInterface {
 
 如\refig{dist-worker-interface}所示，\code{WorkerService}存在两种实现。其中，在本地模式中，直接使用\code{GrpcWorker}；在分布式模式中，\ascii{Worker}部署在另一个不同的进程内，则使用\code{GrpcRemoteWorker}。
 
-需要注意的是，在本地模式中，\code{MasterInterface}实现本地模式的\ascii{Client}时，显式地增加了\code{LocalMaster}的类型。而\code{WorkerInterface}并没有显式地添加\code{LocalWorker}的类型。也就是说，在本地模式中，通过函数调用直接获取\ascii{WorkerService}的服务，不需要额外的转发。
+\subsection{RPC过程}
+
+如\refig{dist-worker-interaction}所示，\ascii{Client}通过\code{MasterInterface}获取远端\ascii{MasterService}的服务。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/dist-worker-interaction.png}
+\caption{获取\code{MasterService}的RPC过程}
+ \label{fig:dist-worker-interaction}
+\end{figure}
+
+其中，\code{GrpcRemoteWorker}是\ascii{gRPC}客户端的一种实现，它最终通过\code{Stub}获取远端\ascii{Worker}上的\code{GrpcWorkerService}服务，使得其行为表现得犹如本地函数调用一样。其中，\code{GrpcWorkerService}实现了\code{WorkerService}定义的所有服务接口。
+
+\begin{remark}
+从严格意义上讲，\script{GrpcRemoteWorker}是\ascii{Master}或者对端\ascii{Worker}实现的一部分。
+\end{remark}
+
+需要注意的是，在本地模式中，显式地增加了\code{MasterInterface}接口的子类型\code{LocalMaster}；而\code{WorkerInterface}接口并不存在\code{LocalWorker}的子类型，而是存在\code{GrpcWorker}的子类型。也就是说，在本地模式中，通过\code{GrpcWorker}的函数调用，直接获取到了\ascii{WorkerService}的服务，不需要额外的函数转调过程。
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.6\textwidth]{figures/dist-worker-interface.png}
-\caption{\code{WorkerInterface}}
+\caption{\code{WorkerInterface}接口}
  \label{fig:dist-worker-interface}
 \end{figure}
 
+\subsection{消息定义}
+
+接下来，将详细看看\code{WorkerService}各个接口的消息定义。其中，最重要的就是识别出各个服务的标识。当创建\code{WorkerSession}时，\ascii{Master}携带\code{MasterSession}的标识传递给\ascii{Worker}，实现\ascii{MasterSession}统一管理多个隶属的\code{WorkerSession}实例。
+
+当\ascii{Worker}完成\code{RegisterGraph}后，向\ascii{Master}返回唯一的\code{graph\_handle}，以此标识该图实例。因此，在集群内，可以使用\code{(session\_handle, graph\_handle)}二元组唯一标识该图实例。
+
+当\ascii{Master}广播通知各个\ascii{Worker}并发地\code{RunGraph}。为了区分不同\code{step}，\ascii{Master}生成全局唯一的\code{step\_id}，并通过\code{RunGraph}传递给各个\ascii{Worker}。
+
+\subsubsection{CreateWorkerSession}
+
+如\refig{dist-worker-create-worker-sess}所示，\code{CreateWorkerSessionRequest}消息中携带\code{MasterSession}分配的\code{session\_handle}。当\ascii{Worker}收到请求消息后，生成一个\code{WorkerSession}实例，并使用\code{session\_handle}在该\ascii{Worker}内唯一地标识该实例。
+
+在同一个集群中，对于一个\code{MasterSession}实例，其他\ascii{Worker}收到相同的\code{session\_handle}。如此，该\ascii{MasterSession}实例便能统一管理隶属于它的所有\code{WorkerSession}实例了。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{figures/dist-worker-create-worker-sess.png}
+\caption{\code{CreateWorkerSession}}
+ \label{fig:dist-worker-create-worker-sess}
+\end{figure}
+
+\begin{leftbar}
+\begin{c++}
+message CreateWorkerSessionRequest {
+  string session_handle = 1;
+  ServerDef server_def = 2;
+}
+
+message CreateWorkerSessionResponse {
+}
+\end{c++}
+\end{leftbar}
+
+\subsubsection{RegisterGraph}
+
+如\refig{dist-worker-register-graph}所示，\code{RegisterGraphRequest}消息中携带\code{MasterSession}分配的\code{session\_handle}，及其子图实例\ascii{graph\_def}。
+
+当\ascii{Worker}完成子图注册及其初始化后，向\ascii{Master}返回该子图的\code{graph\_handle}。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{figures/dist-worker-register-graph.png}
+\caption{\code{RegisterGraph}}
+ \label{fig:dist-worker-register-graph}
+\end{figure}
+
+\begin{leftbar}
+\begin{c++}
+message RegisterGraphRequest {
+  string session_handle = 1;
+
+  GraphDef graph_def = 2;
+  bool has_control_flow = 3 [deprecated = true];
+
+  GraphOptions graph_options = 4;
+  DebugOptions debug_options = 5;
+}
+
+message RegisterGraphResponse {
+  string graph_handle = 1;
+}
+\end{c++}
+\end{leftbar}
+
+
+\subsubsection{DeregisterGraph}
+
+如\refig{dist-worker-deregister-graph}所示，当\ascii{Worker}节点上的子图不再需要时(例如，计算图被重新调度，图中节点被重新编排)，此时\ascii{Master}向\ascii{Worker}发送\code{DeregisterGraph}消息，以便注销掉该子图实例。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{figures/dist-worker-deregister-graph.png}
+\caption{\code{DeregisterGraph}}
+ \label{fig:dist-worker-deregister-graph}
+\end{figure}
+
+\begin{leftbar}
+\begin{c++}
+message DeregisterGraphRequest {
+  string session_handle = 2;
+  string graph_handle = 1;
+}
+
+message DeregisterGraphResponse {
+}
+\end{c++}
+\end{leftbar}
+
+\subsubsection{RunGraph}
+
+迭代执行\ascii{Worker}节点上注册的子图时，为了区分不同\code{step}，\ascii{Master}生成唯一\code{step\_id}并传递给各个\ascii{Worker}，各个\ascii{Worker}通过\code{step\_id}实现协同。
+
+此外，\code{RunGraphRequest}携带了\code{send, recv\_key}，分别表示子图输入的\code{Tensor}标识和数据，及其子图输出的\code{Tensor}的标识。\code{RunGraphResponse}返回\code{recv\_key}相对应的\code{Tensor}列表。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{figures/dist-worker-run-graph.png}
+\caption{\code{RunGraph}}
+ \label{fig:dist-worker-run-graph}
+\end{figure}
+
+\begin{leftbar}
+\begin{c++}
+message RunGraphRequest {
+  string session_handle = 8;
+  string graph_handle = 1;
+  int64 step_id = 2;
+
+  ExecutorOpts exec_opts = 5;
+
+  repeated NamedTensorProto send = 3;
+  repeated string recv_key = 4;
+
+  bool is_partial = 6;
+  bool is_last_partial_run = 7;
+}
+
+message RunGraphResponse {
+  repeated NamedTensorProto recv = 1;
+
+  // execution stats
+  StepStats step_stats = 2;
+  CostGraphDef cost_graph = 3;
+  repeated GraphDef partition_graph = 4;
+}
+\end{c++}
+\end{leftbar}
+
+\subsubsection{RecvTensor}
+
+当执行某一次\code{step}中，如果两个\ascii{Worker}需要交互数据，消费者向生产者发送\code{RecvTensorRequest}消息，通过携带\code{(step\_id, rendezvous\_key)}二元组，请求对端\ascii{Worker}相应的\code{Tensor}数据，并通过\code{RecvTensorResponse}返回。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{figures/dist-worker-recv-tensor.png}
+\caption{\code{RecvTensor}}
+ \label{fig:dist-worker-recv-tensor}
+\end{figure}
+
+\begin{leftbar}
+\begin{c++}
+message RecvTensorRequest {
+  int64 step_id = 1;
+  string rendezvous_key = 2;
+
+  // If true, use an out-of-band DMA mechanism to transfer the
+  // received tensor.
+  bool dma_ok = 3;
+
+  // Optional information on client-side device locality.
+  DeviceLocality client_locality = 4;
+
+  // Optional information on server-side device locality.
+  DeviceLocality server_locality = 5;
+
+  // Optional information needed by the RPC subsystem.
+  google.protobuf.Any transport_options = 6;
+}
+
+message RecvTensorResponse {
+  // The tensor as a proto.
+  TensorProto tensor = 1;
+
+  // If true, this tensor was the output of a dead node, and the
+  // content is invalid.
+  bool is_dead = 2;
+
+  // The time at which tensor was available and started to be returned.
+  int64 send_start_micros = 3;
+
+  // Optional additional information about how to receive the tensor,
+  // e.g. in the event that `RecvTensorRequest.dma\_ok` was true.
+  google.protobuf.Any transport_options = 4;
+}
+\end{c++}
+\end{leftbar}
+
 \end{content}
 
-\section{创建会话}
+\section{创建GrpcSession}
 
 \begin{content}
 
@@ -1061,7 +1255,7 @@ struct GrpcSessionFactory : SessionFactory {
 
 当\code{target}以\code{grpc://}开头，则\code{SessionFactory::GetFactory}返回\code{GrpcSessionFactory}实例，而\code{GrpcSessionFactory}工厂方法委托\code{GrpcSession::Create}的静态工厂方法负责创建\code{GrpcSession}实例。
 
-而\code{GrpcSessionFactory::NewSession}由\ascii{C API}调用。\ascii{C API}是\tf{}后端系统对外提供的标准接口，对外供多种编程语言调用，例如\ascii{Python}。
+而\code{GrpcSessionFactory::NewSession}由\ascii{C API}调用。其中，\ascii{C API}是\tf{}后端系统对外提供的标准接口，对外供多种编程语言调用。
 
 \begin{leftbar}
 \begin{c++}
@@ -1092,13 +1286,11 @@ TF_DeprecatedSession* TF_NewDeprecatedSession(
 \end{c++}
 \end{leftbar}
 
-在\code{GrpcSession::Create}静态工厂方法中，它主要负责创建\code{GrpcSession}实例，并完成相应的初始化工作。
-
-在初始化过程中，最重要的就是构建\code{MasterInterface}实例。其中，\code{MasterInterface}存在两种基本实现，分别对应两种不同应用场景：
+在\code{GrpcSession::Create}静态工厂方法中，它主要负责创建\code{GrpcSession}实例，并完成相应的初始化工作。在初始化过程中，最重要的就是构建\code{MasterInterface}实例。其中，\code{MasterInterface}存在两种子类实现，分别对应两种不同应用场景：
 
 \begin{enum}
-  \eitem{\code{LocalMaster}：\ascii{Client}与\ascii{Master}在同一进程内，调用\code{LocalMaster::Lookup}直接获取；}
-  \eitem{\code{GrpcRemoteMaster}：\ascii{Client}与\ascii{Master}不在同一进程内，调用\code{NewGrpcMaster}直接获取；其中，\code{NewGrpcMaster}工厂方法生成\code{GrpcRemoteMaster}实例。}
+  \eitem{\code{LocalMaster}：\ascii{Client}与\ascii{Master}在同一进程内，调用\code{LocalMaster::Lookup}直接获取\code{LocalMaster}实例；}
+  \eitem{\code{GrpcRemoteMaster}：\ascii{Client}与\ascii{Master}不在同一进程内，调用工厂方法\code{NewGrpcMaster}生成\code{GrpcRemoteMaster}实例。}
 \end{enum}
 
 \begin{leftbar}
@@ -1108,13 +1300,15 @@ Status GrpcSession::Create(
     std::unique_ptr<GrpcSession>* out_session) {
   std::unique_ptr<GrpcSession> session(new GrpcSession(options));
   std::unique_ptr<MasterInterface> master;
+  // intra-process between client and master.
   if (!options.config.rpc_options().use_rpc_for_inprocess_master()) {
     master = LocalMaster::Lookup(options.target);
   }
+  // inter-process between client and master.
   if (!master) {
     SharedGrpcChannelPtr master_channel;
     TF_RETURN_IF_ERROR(NewHostPortGrpcChannel(
-        options.target.substr(kSchemePrefixLength), &master_channel));
+        options.target.substr(strlen(kSchemePrefix)), &master_channel));
     master.reset(NewGrpcMaster(master_channel));
   }
   session->SetRemoteMaster(std::move(master));
@@ -1126,32 +1320,26 @@ Status GrpcSession::Create(
 
 \end{content}
 
-\section{销毁会话}
+\section{创建MasterSession}
 
 \begin{content}
 
-\end{content}
-
-\section{创建/扩展图}
-
-\begin{content}
-
-如\refig{dist-create-session}所示，当调用\code{GprcSession::Create}时，将初始的计算图通过\code{CreateSessionRequst}消息发送给\ascii{Master}。
+如\refig{dist-create-master-session}所示，当调用\code{GprcSession::Create}时，将初始的计算图通过\code{CreateSessionRequst}消息发送给\ascii{Master}。
 
 当\ascii{Master}收到\code{CreateSessionRequst}消息后，生成相对应的\code{MasterSession}实例，并使用全局唯一的\code{handle}标识，最终通过\code{CreateSessionResponse}消息带回给\code{GrpcSession}。
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\textwidth]{figures/dist-create-session.png}
-\caption{创建图}
- \label{fig:dist-create-session}
+\includegraphics[width=1.0\textwidth]{figures/dist-create-session.png}
+\caption{创建\code{MasterSession}}
+ \label{fig:dist-create-master-session}
 \end{figure}
 
-\subsection{Client端}
+\subsection{GrpcSesion::Create(graph\_def)}
 
-\subsubsection{GrpcSesion}
+\code{GrpcSession::Create(graph\_def)}方法主要用于\code{Client}请求\code{Master}创建\code{MasterSession}实例。首先，\code{GrpcSession::Create}方法完成构造\code{CreateSessionRequst}消息，然后通过\code{GrpcRemoteMaster}将其发送给\ascii{Master}。
 
-\code{GrpcSession::Create}方法主要负责构造\code{CreateSessionRequst}消息，然后通过\code{GrpcRemoteMaster}使用\ascii{gRPC}将其发送给\ascii{Master}；等收到\code{CreateSessionResponse}消息后，保存\code{MasterSession}的\code{handle}，及其新的计算图版本号\code{graph\_version}，用于后续扩展计算图使用。
+接着，等\code{GrpcSession}收到\code{CreateSessionResponse}消息后，保存\code{MasterSession}的\code{handle}，及其新的计算图版本号\code{graph\_version}。其中，\code{handle}用于标识\ascii{Master}侧的\code{MasterSession}实例，\code{graph\_version}用于后续扩展计算图使用。
 
 \begin{leftbar}
 \begin{c++}
@@ -1178,7 +1366,7 @@ Status GrpcSession::CreateImpl(CallOptions* call_options,
   BuildCreateSessionReq(graph, req);
   Status s = master_->CreateSession(call_options, &req, &resp);
   if (s.ok()) {
-
+    SaveCreateSessionRsp(resp);
   }
   return s;
 }
@@ -1198,9 +1386,9 @@ Status GrpcSession::Create(const GraphDef& graph) {
 \end{c++}
 \end{leftbar}
 
-\subsubsection{GrpcRemoteMaster}
+\subsection{GrpcRemoteMaster::CreateSession}
 
-\code{GrpcRemoteMaster}是一个\ascii{gRPC}的客户端实现。它的实现非常简单，通过\ascii{gRPC}的一个\code{stub}调用远端\ascii{Master}对应的服务。
+\code{GrpcRemoteMaster}是一个\ascii{gRPC}的客户端实现。它的实现非常简单，通过\ascii{gRPC}的一个\code{stub}调用远端\ascii{Master}相应的服务。
 
 \begin{leftbar}
 \begin{c++}
@@ -1224,15 +1412,13 @@ Status GrpcRemoteMaster::CreateSession(
 \end{c++}
 \end{leftbar}
 
-\subsection{Master端}
-
-\subsubsection{GrpcMasterService}
+\subsection{GrpcMasterService::CreateSessionHandler}
 
 \code{GrpcMasterService}是一个\ascii{gRPC}服务，它实现了\code{MasterService}的\ascii{RPC}服务接口。
 
 当收到\code{CreateSession}消息后，将由\code{GrpcMasterService::CreateSessionHandler}处理该消息。它将委托\code{Master}处理该消息。
 
-\code{Master}处理完成后，将调用注册了的\ascii{lambda}表达式，向\ascii{Client}返回响应消息。
+\code{Master}处理完成后，将回调完成时的\ascii{lambda}表达式，向\ascii{Client}返回\code{CreateSessionResponse}的响应消息。
 
 \begin{leftbar}
 \begin{c++}
@@ -1249,11 +1435,9 @@ void GrpcMasterService::CreateSessionHandler(
 \end{c++}
 \end{leftbar}
 
-\subsubsection{创建MasterSession}
+\subsection{Master::CreateSession}
 
-然后，\ascii{Master}将在线程池里启动一个线程，并在线程内按照\code{cluster\_spec}信息，寻找所有的\ascii{Worker}，并收集本地设备，及其远端设备的信息。
-
-最后，该线程创建了一个\code{MasterSession}，并将计算图传递给它；等待完成后，\ascii{Master}保存了\code{<handle, master\_session>}的二元组信息，以便后续\ascii{Master}能够通过\code{handle}索引相应的\code{MasterSession}实例。
+然后，\code{Master::CreateSession}将会在线程池里启动一个线程，并在线程内按照\code{cluster\_spec}信息，寻找所有的\ascii{Worker}，并收集本地设备，及其远端设备的信息。最后，该线程创建了一个\code{MasterSession}；并且当创建成功后，\ascii{Master}会保存\code{(handle, master\_session)}的二元组信息，以便后续\ascii{Master}能够通过\code{handle}索引相应的\code{MasterSession}实例。
 
 \begin{leftbar}
 \begin{c++}
@@ -1285,7 +1469,7 @@ void Master::CreateSession(const CreateSessionRequest* req,
     GraphDef* gdef =
         const_cast<CreateSessionRequest*>(req)->mutable_graph_def();
     
-    // 5. MasterSession::Create(graph\_def)
+    // 5. Create WorkerSession foreach worker.
     status = session->Create(gdef, worker_cache_factory_options);
     resp->set_session_handle(session->handle());
     
@@ -1298,6 +1482,17 @@ void Master::CreateSession(const CreateSessionRequest* req,
 }
 \end{c++}
 \end{leftbar}
+
+其中，在创建完\code{MasterSession}，并保存\code{(handle, master\_session)}的二元组信息之间，将启动\code{MasterSession::Create(graph\_def)}过程。
+
+\subsection{MasterSession::Create(graph\_def)}
+
+\code{MasterSession::Create(graph\_def)}主要完成两件事情。
+
+\begin{enum}
+  \eitem{初始化计算图，并生成\code{SimpleGraphExecutionState}实例；}
+  \eitem{广播所有\ascii{Worker}创建相应的\code{WorkerSession}实例。}
+\end{enum}
 
 \begin{leftbar}
 \begin{c++}
@@ -1320,81 +1515,146 @@ Status MasterSession::Create(
 \end{c++}
 \end{leftbar}
 
-\subsubsection{创建WorkerSession}
+\subsubsection{创建\code{WorkerSession}}
+
+\ascii{Master}会广播所有\ascii{Worker}创建相应的\code{WorkerSession}实例。这些\code{WorkerSession}隶属于此\code{MasterSession}实例，因为它们使用与\code{MasterSession}实例相同的\code{handle}标识。
+
+\code{MasterSession}为了收齐所有\ascii{Worker}返回的\code{CreateWorkerSessionResponse}消息，引入了\code{BlockingCounter}计数器。
 
 \begin{leftbar}
 \begin{c++}
+struct MasterSession::Worker {
+  Worker(MasterSession* sess, const string& name,
+         const DeviceNameUtils::ParsedName& parsed_name,
+         const WorkerCacheFactoryOptions& opts)
+      : sess(sess),
+        name(&name),
+        worker(GetOrCreateWorker()) {
+    BuildRequest(parsed_name, opts);
+  }
+
+  void CreateWorkerSession(BlockingCounter& done, Status& status) {
+    auto cb = [&status, &done](const Status& s) {
+      status.Update(s);
+      done.DecrementCount();
+    };
+    worker->CreateWorkerSessionAsync(&request, &response, cb);
+  }
+
+  void Release() {
+    if (worker != nullptr) {
+      sess->worker_cache_->ReleaseWorker(*name, worker);
+    }
+  }
+
+ private:
+  WorkerInterface* GetOrCreateWorker() {
+    return sess->worker_cache_->CreateWorker(*name);
+  }
+
+  void BuildRequest(const DeviceNameUtils::ParsedName& parsed_name,
+                    const WorkerCacheFactoryOptions& opts) {
+    request.set_session_handle(sess->handle_);
+    BuildServerDef(parsed_name, opts, request.mutable_server_def());
+  }
+
+  void BuildServerDef(const DeviceNameUtils::ParsedName& parsed_name,
+                      const WorkerCacheFactoryOptions& opts,
+                      ServerDef* server_def) {
+    *server_def->mutable_cluster() = *opts.cluster_def;
+    server_def->set_protocol(*opts.protocol);
+    server_def->set_job_name(parsed_name.job);
+    server_def->set_task_index(parsed_name.task);
+  }
+
+ private:
+  MasterSession* sess;
+
+  // The worker name. (Not owned.)
+  const string* name;
+
+  // The worker referenced by name. (Not owned.)
+  WorkerInterface* worker = nullptr;
+
+  // Request and responses used for a given worker.
+  CreateWorkerSessionRequest request;
+  CreateWorkerSessionResponse response;
+};
+
+struct MasterSession::WorkerGroup {
+  WorkerGroup(MasterSession* sess)
+      : sess(sess) {
+  }
+
+  Status CreateWorkerSessions(const WorkerCacheFactoryOptions& opts) {
+    TF_RETURN_IF_ERROR(CreateWorkers(opts));
+    TF_RETURN_IF_ERROR(BroadcastWorkers());
+    return Status::OK();
+  }
+
+  void ReleaseWorkers() {
+    for (auto& worker : workers) {
+      worker.Release();
+    }
+  }
+
+ private:
+  Status CreateWorkers(const WorkerCacheFactoryOptions& opts) {
+    sess->worker_cache_->ListWorkers(&worker_names);
+    for (size_t i = 0; i < worker_names.size(); ++i) {
+      TF_RETURN_IF_ERROR(AppendWorker(worker_names[i], opts));
+    }
+    return Status::OK();
+  }
+
+  Status BroadcastWorkers() {
+    Status status = Status::OK();
+    BlockingCounter done(workers.size());
+    for (size_t i = 0; i < workers.size(); ++i) {
+      workers[i].CreateWorkerSession(done, status);
+    }
+    done.Wait();
+    return status;
+  }
+
+  Status AppendWorker(const string& worker_name,
+                    const WorkerCacheFactoryOptions& opts) {
+    DeviceNameUtils::ParsedName parsed_name;
+    TF_RETURN_IF_ERROR(ParseWorkerName(worker_name, &parsed_name));
+    workers.emplace_back(Worker(sess, worker_name, parsed_name, opts));
+    return Status::OK();
+  }
+
+  Status ParseWorkerName(const string& worker_name,
+                         DeviceNameUtils::ParsedName* parsed_name) {
+    if (!DeviceNameUtils::ParseFullName(worker_name, parsed_name)) {
+      return errors::Internal("Could not parse name ", worker_name);
+    }
+    if (!parsed_name->has_job || !parsed_name->has_task) {
+      return errors::Internal("Incomplete worker name ", worker_name);
+    }
+    return Status::OK();
+  }
+
+ private:
+  MasterSession* sess;
+  std::vector<string> worker_names;
+  std::vector<Worker> workers;
+};
+
 Status MasterSession::CreateWorkerSessions(
     const WorkerCacheFactoryOptions& options) {
   CHECK(worker_cache_) << "CreateWorkerSessions should be called only with "
                        << "dynamic cluster membership.";
-  std::vector<string> worker_names;
-  worker_cache_->ListWorkers(&worker_names);
 
-  struct WorkerGroup {
-    // The worker name. (Not owned.)
-    const string* name;
-
-    // The worker referenced by name. (Not owned.)
-    WorkerInterface* worker = nullptr;
-
-    // Request and responses used for a given worker.
-    CreateWorkerSessionRequest request;
-    CreateWorkerSessionResponse response;
-    Status status = Status::OK();
-  };
-  BlockingCounter done(worker_names.size());
-  std::vector<WorkerGroup> workers(worker_names.size());
+  WorkerGroup worker_group(this);
 
   // Release the workers.
-  auto cleanup = gtl::MakeCleanup([this, &workers] {
-    for (auto&& worker_group : workers) {
-      if (worker_group.worker != nullptr) {
-        worker_cache_->ReleaseWorker(*worker_group.name, worker_group.worker);
-      }
-    }
+  auto cleanup = gtl::MakeCleanup([&worker_group] {
+    worker_group.ReleaseWorkers();
   });
 
-  Status status = Status::OK();
-  // Create all the workers \& kick off the computations.
-  for (size_t i = 0; i < worker_names.size(); ++i) {
-    workers[i].name = &worker_names[i];
-    workers[i].worker = worker_cache_->CreateWorker(worker_names[i]);
-    workers[i].request.set_session_handle(handle_);
-    *workers[i].request.mutable_server_def()->mutable_cluster() =
-        *options.cluster_def;
-    workers[i].request.mutable_server_def()->set_protocol(*options.protocol);
-
-    DeviceNameUtils::ParsedName name;
-    if (!DeviceNameUtils::ParseFullName(worker_names[i], &name)) {
-      status = errors::Internal("Could not parse name ", worker_names[i]);
-      LOG(WARNING) << status;
-      return status;
-    }
-    if (!name.has_job || !name.has_task) {
-      status = errors::Internal("Incomplete worker name ", worker_names[i]);
-      LOG(WARNING) << status;
-      return status;
-    }
-
-    workers[i].request.mutable_server_def()->set_job_name(name.job);
-    workers[i].request.mutable_server_def()->set_task_index(name.task);
-  }
-
-  for (size_t i = 0; i < worker_names.size(); ++i) {
-    auto cb = [i, &workers, &done](const Status& s) {
-      workers[i].status = s;
-      done.DecrementCount();
-    };
-    workers[i].worker->CreateWorkerSessionAsync(&workers[i].request,
-                                                &workers[i].response, cb);
-  }
-
-  done.Wait();
-  for (size_t i = 0; i < workers.size(); ++i) {
-    status.Update(workers[i].status);
-  }
-  return status;
+  return worker_group.CreateWorkerSessions(options);
 }
 \end{c++}
 \end{leftbar}
