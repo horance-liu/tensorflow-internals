@@ -64,9 +64,7 @@
 
 进程间的\code{Send}和\code{Recv}节点，通过\code{GrpcRemoteRendezvous}实现数据交换。例如，\code{/job:ps/task:0}与\code{/job:worker/task:0}，\code{/job:ps/task:0}与\code{/job:worker/task:1}，或\code{/job:worker/task:0}与\code{/job:worker/task:1}之间是通过\code{GrpcRemoteRendezvous}完成数据交换的。
 
-而进程内的\code{Send}和\code{Recv}节点，则通过\code{IntraProcessRendezvous}实现数据交换。例如，\code{/job:worker/task:1}内存在两个\code{GPU}，它们之间采用\code{IntraProcessRendezvous}实现数据交换。
-
-关于\code{Rendezvous}的具体实现过程，下文将还会重点讲述。
+而进程内的\code{Send}和\code{Recv}节点，则通过\code{IntraProcessRendezvous}实现数据交换。例如，\code{/job:worker/task:1}内存在两个\code{GPU}，它们之间采用\code{IntraProcessRendezvous}实现数据交换。关于\code{Rendezvous}的具体实现过程，下文将还会重点讲述。
 
 \begin{figure}[H]
 \centering
@@ -166,333 +164,6 @@ message ClusterDef {
 \end{leftbar}
 
 其中，\code{tasks}的关键字表示\code{task\_index}，值表示\code{host:port}。
-
-\end{content}
-
-\section{服务器}
-
-\begin{content}
-
-\code{Server}是一个基于\ascii{gRPC}的服务器，负责管理本地设备集。它对外提供\code{MasterService}服务和\code{WorkerService}服务，具有同时扮演\ascii{Master}和\ascii{Worker}的角色。
-
-\subsection{领域模型}
-
-如\refig{cc-server-model}所示，\code{GrpcServer}扮演\ascii{Master}的角色时，对外提供\code{MasterService}服务；其中，它为每一个接入的\ascii{Client}启动一个\code{MasterSession}实例，并使用全局唯一的\code{session\_handle}标识它。也就是说，\ascii{Master}可以接入多个\ascii{Client}，而一个\ascii{Client}则只能接入一个特定的\ascii{Master}。
-
-\code{GrpcServer}扮演\ascii{Worker}的角色时，对外提供\code{WorkerService}服务；其中，每个\ascii{Worker}可以为多个\ascii{Master}提供计算服务，它为每个向它请求计算服务的\code{MasterSession}生成一个相应的\code{WorkerSession}实例，等待相应的\code{MasterSession}下发计算图的\emph{注册}和\emph{执行}命令。
-
-整个\code{GrpcServer}实例承载于\code{grpc::Server}进程之上，它监听特定端口的消息，当消息到达时自动派发到\code{MasterService}或\code{WorkerService}中相应的消息处理的回调函数。
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=1.0\textwidth]{figures/cc-server-model.png}
-\caption{Server领域模型}
- \label{fig:cc-server-model}
-\end{figure}
-
-\subsubsection{Protobuf描述}
-
-当\code{protocol}为\code{grpc}时，系统运行时将启用基于\ascii{gRPC}实现的\code{GrpcServer}实例。此外，可以通过\code{ConfigProto}实现运行时参数的配置。也就是说，\tf{}的架构是对外开放的。例如，通过扩展\code{protocol}支持新的通信协议，实现基于新协议的\code{Server}实例。
-
-\begin{leftbar}
-\begin{python}
-message ServerDef {
-  ClusterDef cluster = 1;
-  
-  string job_name = 2;
-  int32 task_index = 3;
-
-  ConfigProto default_session_config = 4;
-  string protocol = 5;
-}
-\end{python}
-\end{leftbar}
-
-\subsubsection{服务互联}
-
-如\refig{cc-server-interact}所示，一个\ascii{Server}实例通过\code{tf.train.ClusterSpec}与集群中的其他\ascii{Server}实例实现互联。
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.5\textwidth]{figures/cc-server-interact.png}
-\caption{服务互联}
- \label{fig:cc-server-interact}
-\end{figure}
-
-如\refig{cc-server-interact-1}所示，当\ascii{Client}接入其中一个\ascii{Server}，此时它扮演了\ascii{Master}的角色，其他\ascii{Server}则扮演了\ascii{Worker}的角色。特殊地，\ascii{Client}接入的\ascii{Server}也扮演了\ascii{Worker}的角色。
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.5\textwidth]{figures/cc-server-interact-1.png}
-\caption{单Client接入集群}
- \label{fig:cc-server-interact-1}
-\end{figure}
-
-如\refig{cc-server-interact-2}所示，可能存在多个\ascii{Client}分别接入不同的\ascii{Server}实例。此时，\ascii{Client}接入的\ascii{Server}实例扮演了\ascii{Master}角色。但是，该\ascii{Server}实例，相对于集群中另外的\ascii{Server}实例，则扮演了\ascii{Worker}角色。
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.5\textwidth]{figures/cc-server-interact-2.png}
-\caption{多Client接入集群}
- \label{fig:cc-server-interact-2}
-\end{figure}
-
-特殊地，\ascii{Client}与\ascii{Master}可以部署在同一个进程内。此时，\ascii{Client}与\ascii{Master}之间的交互更加简单，两者直接使用函数调用，避免了\ascii{gRPC}交互的额外开销。依次类推，在同一个\ascii{Server}内，\ascii{Master}与\ascii{Worker}可以部署在同一进程内。此时，\ascii{Master}与\ascii{Worker}之间直接使用函数调用。
-
-\subsection{状态机}
-
-如\refig{dist-grpc-server-state-machine}所示，\code{GrpcServer}是一个基于\code{grpc::Server}的服务器，它管理和维护了一个简单的状态机。
-
-\code{GrpcServer}在\code{New}状态上启动了\code{grpc::Server}服务，但对外并没有提供服务；而在\code{Started}状态上启动服务，对外提供\code{MasterService}和\code{WorkerService}的\code{RPC}消息服务；最终，在\code{Stopped}状态下停止\code{MasterService}和\code{WorkerService}服务。
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.7\textwidth]{figures/dist-grpc-server-state-machine.png}
-\caption{GrpcServer状态机}
- \label{fig:dist-grpc-server-state-machine}
-\end{figure}
-
-\subsubsection{创建服务}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.7\textwidth]{figures/dist-grpc-server-factory.png}
-\caption{多态创建Server实例}
- \label{fig:dist-grpc-server-factory}
-\end{figure}
-
-\begin{leftbar}
-\begin{c++}
-struct GrpcServerFactory : ServerFactory {
-  bool AcceptsOptions(const ServerDef& server_def) override {
-    return server_def.protocol() == "grpc";
-  }
-
-  Status NewServer(const ServerDef& server_def,
-      std::unique_ptr<ServerInterface>* out_server) override {
-    GrpcServer::Create(server_def, Env::Default(), out_server);
-    return Status::OK();
-  }
-};
-\end{c++}
-\end{leftbar}
-
-\begin{leftbar}
-\begin{c++}
-void GrpcServer::Create(
-    const ServerDef& server_def, Env* env,
-    std::unique_ptr<ServerInterface>* out_server) {
-  auto ret = std::make_unique<GrpcServer>(server_def, env);
-  ret->Init();
-  *out_server = std::move(ret);
-}
-\end{c++}
-\end{leftbar}
-
-如\refig{cc-server-model}所示，\code{GrpcServer::Init}将完成\code{GrpcServer}领域对象的初始化，主要包括如下\ascii{3}个基本过程。
-
-\begin{enum}
-  \eitem{初始化\code{MasterEnv}实例；}  
-  \eitem{初始化\code{WorkerEnv}实例；}  
-  \eitem{创建并启动\code{grpc::Server}}    
-    \begin{enum}
-    \eitem{初始化\code{MasterService}}      
-    \begin{nitemize}
-      \eitem{创建\code{Master}实例；}  
-      \eitem{创建\code{MasterService}实例；}
-    \end{nitemize}
-    \eitem{初始化\code{WorkerService}}          
-    \begin{nitemize}          
-      \eitem{创建\code{Worker}实例；}  
-      \eitem{创建\code{WorkerService}实例。}
-    \end{nitemize}      
-    \end{enum}
-\end{enum}
-
-为了更好地理解整个\code{GrpcServer}实例的初始化过程，此处做了局部的重构。首先，它初始化\code{MasterEnv, WorkerEnv}实例；然后，创建并启动\code{grpc::Server}服务器。其中，初始化\code{MasterEnv/WorkerEnv}，就是完成\code{MasterEnv/WorkerEnv}对象的构造过程，在此不再冗述。重点探究一下\code{grpc::Server}实例的构建和启动过程。
-
-\begin{leftbar}
-\begin{c++}
-void GrpcServer::Init() {
-  InitMasterEnv();
-  InitWorkerEnv();
-  StartGrpcServer();
-}
-\end{c++}
-\end{leftbar}
-
-实现使用构建器创建\code{grpc::Server}实例。首先，配置\code{grpc::Server}的服务选项；然后，分别构建\code{MasterService}实例和\code{WorkerService}实例。最后，调用\code{builder.BuildAndStart}方法启动\code{grpc::Server}服务器。
-
-需要注意的是，\code{grpc::Server}启动时，\code{GrpcServer}依然处于\code{New}状态，
-\code{grpc::Server}暂时还未对外提供\code{MasterService}服务和\code{WorkerService}服务。直至\code{GrpcServer}迁移至\code{Started}状态位置，\code{grpc::Server}才真正对外提供\code{MasterService}服务和\code{WorkerService}服务。
-
-\begin{leftbar}
-\begin{c++}
-void InitServerBuilder(::grpc::ServerBuilder& builder) {
-  builder.AddListeningPort(
-    strings::StrCat("0.0.0.0:", GetRequestedPort()),
-    GetServerCredentials(server_def_), &bound_port_);
-  builder.SetMaxMessageSize(std::numeric_limits<int32>::max());
-  builder.SetOption(
-      std::unique_ptr<::grpc::ServerBuilderOption>(new NoReusePortOption));
-}
-
-void GrpcServer::StartGrpcServer() {
-  ::grpc::ServerBuilder builder;
-
-  InitServerBuilder(builder);
-  InitMasterService(builder);
-  InitWorkerService(builder);
-
-  server_ = builder.BuildAndStart();  
-}
-\end{c++}
-\end{leftbar}
-
-很容易发现，\code{grpc::Server}对外提供\code{MasterService}服务的实体是\code{GrpcMasterService}实例。当消息到达时，将自动回调\code{GrpcMasterService}实例中相应的消息处理函数。其中，在消息处理函数中，其业务逻辑的处理完全依托于\code{Master}的领域对象。
-
-\begin{leftbar}
-\begin{c++}
-std::unique_ptr<Master> GrpcServer::CreateMaster(
-    MasterEnv* master_env) {
-  return std::make_unique<Master>(master_env);
-}
-
-AsyncServiceInterface* NewGrpcMasterService(
-    Master* master, ::grpc::ServerBuilder* builder) {
-  return new GrpcMasterService(master, builder);
-}
-
-void GrpcServer::InitMasterService() {
-  master_impl_ = CreateMaster(&master_env_);
-  master_service_ = NewGrpcMasterService(
-      master_impl_.get(), &builder);  
-}
-\end{c++}
-\end{leftbar}
-
-依次类推，\code{grpc::Server}对外提供\code{WorkerService}服务的实体是\code{GrpcWorkerService}实例。当消息到达时，将自动回调\code{GrpcWorkerService}实例中相应的消息处理函数。其中，在消息处理函数中，其业务逻辑的处理完全依托于\code{GrpcWorker}的领域对象。
-
-\begin{leftbar}
-\begin{c++}
-std::unique_ptr<GrpcWorker> NewGrpcWorker(WorkerEnv* env) {
-  return std::unique_ptr<GrpcWorker>(new GrpcWorker(env));
-}
-
-AsyncServiceInterface* NewGrpcWorkerService(
-    GrpcWorker* worker, ::grpc::ServerBuilder* builder) {
-  return new GrpcWorkerService(worker, builder);
-}
-
-void GrpcServer::InitWorkerService(::grpc::ServerBuilder& builder) {
-  worker_impl_ = NewGrpcWorker(&worker_env_);
-  worker_service_ = NewGrpcWorkerService(
-    worker_impl_.get(), &builder);
-}
-\end{c++}
-\end{leftbar}
-
-\subsubsection{启动服务}
-
-在\code{New}状态，\code{grpc::Server}已经启动，但暂时没有对外提供\code{MasterService}服务和\code{WorkerService}服务。通过调用\code{GrpcServer::Start}方法后，\code{GrpcServer}的状态从\code{New}迁移\code{Started}状态，并启动了两个独立的线程，分别启动\code{MasterService}和\code{WorkerService}的消息处理器。此时，\code{GrpcServer}正式对外提供\code{MasterService}和\code{WorkerService}。
-
-\begin{leftbar}
-\begin{c++}
-Status GrpcServer::Start() {
-  mutex_lock l(mu_);
-  switch (state_) {
-    case NEW: {
-      master_thread_.reset(
-          env_->StartThread(ThreadOptions(), "TF_master_service",
-                            [this] { master_service_->HandleRPCsLoop(); }));
-      worker_thread_.reset(
-          env_->StartThread(ThreadOptions(), "TF_worker_service",
-                            [this] { worker_service_->HandleRPCsLoop(); }));
-      state_ = STARTED;
-      return Status::OK();
-    }
-    case STARTED:
-      LOG(INFO) << "Server already started(" << target() << ")";    
-      return Status::OK();
-    case STOPPED:
-    default:
-      CHECK(false);
-  }
-}
-\end{c++}
-\end{leftbar}
-
-\subsubsection{等待终止服务}
-
-为了持久地对外提供\code{MasterService}服务和\code{WorkerService}服务，需要分别对线程\code{TF\_master\_service}和\code{TF\_worker\_service}实施\code{join}操作，使得主线程挂起，直至这两个线程终止。
-
-通过调用\code{GrpcServer::Join}方法，当\code{GrpcServer}处于\code{Started}或\code{Stoped}状态时，它将自动调用\code{Thread}的析构函数。
-
-\begin{leftbar}
-\begin{c++}
-Status GrpcServer::Join() {
-  mutex_lock l(mu_);
-  switch (state_) {
-    case NEW:
-      // Prevent the server from being started subsequently.
-      state_ = STOPPED;
-      return Status::OK();
-    case STARTED:
-    case STOPPED:
-      master_thread_.reset();
-      worker_thread_.reset();
-      return Status::OK();
-    default:
-      CHECK(false);
-  }
-}
-\end{c++}
-\end{leftbar}
-
-例如，基于\code{C++}标准库实现的\code{StdThread}中，其析构函数将调用\code{std::thread}的\code{join}方法。
-
-\begin{leftbar}
-\begin{c++}
-struct StdThread : Thread {
-  StdThread(const ThreadOptions&, const string&, 
-      std::function<void()> fn)
-    : thread_(fn) {
-  }
-
-  ~StdThread() override { 
-    thread_.join(); 
-  }
-
- private:
-  std::thread thread_;
-};
-\end{c++}
-\end{leftbar}
-
-\subsubsection{终止服务}
-
-遗憾的是，目前\code{GrpcServer}并不能优雅地退出。因此，在工程实践环境中，\tf{}的分布式运行时常常需要借助于\code{Kubernetes}，实现\code{GrpcServer}服务的自动管理。
-
-\begin{leftbar}
-\begin{c++}
-Status GrpcServer::Stop() {
-  mutex_lock l(mu_);
-  switch (state_) {
-    case NEW:
-      state_ = STOPPED;
-      return Status::OK();
-    case STARTED:
-      return errors::Unimplemented(
-          "Clean shutdown is not currently implemented");
-    case STOPPED:
-      LOG(INFO) << "Server already stopped(" << target() << ")";
-      return Status::OK();
-    default:
-      CHECK(false);
-  }
-}
-\end{c++}
-\end{leftbar}
 
 \end{content}
 
@@ -1235,6 +906,722 @@ message RecvTensorResponse {
 
 \end{content}
 
+\section{服务器}
+
+\begin{content}
+
+\code{Server}是一个基于\ascii{gRPC}的服务器，负责管理本地设备集。它对外提供\code{MasterService}服务和\code{WorkerService}服务，具有同时扮演\ascii{Master}和\ascii{Worker}的角色。
+
+\subsection{领域模型}
+
+如\refig{cc-server-model}所示，\code{GrpcServer}扮演\ascii{Master}的角色时，对外提供\code{MasterService}服务；其中，它为每一个接入的\ascii{Client}启动一个\code{MasterSession}实例，并使用全局唯一的\code{session\_handle}标识它。也就是说，\ascii{Master}可以接入多个\ascii{Client}，而一个\ascii{Client}则只能接入一个特定的\ascii{Master}。
+
+\code{GrpcServer}扮演\ascii{Worker}的角色时，对外提供\code{WorkerService}服务；其中，每个\ascii{Worker}可以为多个\ascii{Master}提供计算服务，它为每个向它请求计算服务的\code{MasterSession}生成一个相应的\code{WorkerSession}实例，等待相应的\code{MasterSession}下发计算图的\emph{注册}和\emph{执行}命令。
+
+整个\code{GrpcServer}实例承载于\code{grpc::Server}进程之上，它监听特定端口的消息，当消息到达时自动派发到\code{MasterService}或\code{WorkerService}中相应的消息处理的回调函数。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=1.0\textwidth]{figures/cc-server-model.png}
+\caption{Server领域模型}
+ \label{fig:cc-server-model}
+\end{figure}
+
+\subsubsection{Protobuf描述}
+
+当\code{protocol}为\code{grpc}时，系统运行时将启用基于\ascii{gRPC}实现的\code{GrpcServer}实例。此外，可以通过\code{ConfigProto}实现运行时参数的配置。也就是说，\tf{}的架构是对外开放的。例如，通过扩展\code{protocol}支持新的通信协议，实现基于新协议的\code{Server}实例。
+
+\begin{leftbar}
+\begin{python}
+message ServerDef {
+  ClusterDef cluster = 1;
+  
+  string job_name = 2;
+  int32 task_index = 3;
+
+  ConfigProto default_session_config = 4;
+  string protocol = 5;
+}
+\end{python}
+\end{leftbar}
+
+\subsubsection{服务互联}
+
+如\refig{cc-server-interact}所示，一个\ascii{Server}实例通过\code{tf.train.ClusterSpec}与集群中的其他\ascii{Server}实例实现互联。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{figures/cc-server-interact.png}
+\caption{服务互联}
+ \label{fig:cc-server-interact}
+\end{figure}
+
+如\refig{cc-server-interact-1}所示，当\ascii{Client}接入其中一个\ascii{Server}，此时它扮演了\ascii{Master}的角色，其他\ascii{Server}则扮演了\ascii{Worker}的角色。特殊地，\ascii{Client}接入的\ascii{Server}也扮演了\ascii{Worker}的角色。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{figures/cc-server-interact-1.png}
+\caption{单Client接入集群}
+ \label{fig:cc-server-interact-1}
+\end{figure}
+
+如\refig{cc-server-interact-2}所示，可能存在多个\ascii{Client}分别接入不同的\ascii{Server}实例。此时，\ascii{Client}接入的\ascii{Server}实例扮演了\ascii{Master}角色。但是，该\ascii{Server}实例，相对于集群中另外的\ascii{Server}实例，则扮演了\ascii{Worker}角色。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{figures/cc-server-interact-2.png}
+\caption{多Client接入集群}
+ \label{fig:cc-server-interact-2}
+\end{figure}
+
+特殊地，\ascii{Client}与\ascii{Master}可以部署在同一个进程内。此时，\ascii{Client}与\ascii{Master}之间的交互更加简单，两者直接使用函数调用，避免了\ascii{gRPC}交互的额外开销。依次类推，在同一个\ascii{Server}内，\ascii{Master}与\ascii{Worker}可以部署在同一进程内。此时，\ascii{Master}与\ascii{Worker}之间直接使用函数调用。
+
+\subsection{状态机}
+
+如\refig{dist-grpc-server-state-machine}所示，\code{GrpcServer}是一个基于\code{grpc::Server}的服务器，它管理和维护了一个简单的状态机。
+
+\code{GrpcServer}在\code{New}状态上启动了\code{grpc::Server}服务，但对外并没有提供服务；而在\code{Started}状态上启动服务，对外提供\code{MasterService}和\code{WorkerService}的\code{RPC}消息服务；最终，在\code{Stopped}状态下停止\code{MasterService}和\code{WorkerService}服务。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{figures/dist-grpc-server-state-machine.png}
+\caption{GrpcServer状态机}
+ \label{fig:dist-grpc-server-state-machine}
+\end{figure}
+
+\subsubsection{创建服务}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{figures/dist-grpc-server-factory.png}
+\caption{多态创建Server实例}
+ \label{fig:dist-grpc-server-factory}
+\end{figure}
+
+\begin{leftbar}
+\begin{c++}
+struct GrpcServerFactory : ServerFactory {
+  bool AcceptsOptions(const ServerDef& server_def) override {
+    return server_def.protocol() == "grpc";
+  }
+
+  Status NewServer(const ServerDef& server_def,
+      std::unique_ptr<ServerInterface>* out_server) override {
+    GrpcServer::Create(server_def, Env::Default(), out_server);
+    return Status::OK();
+  }
+};
+\end{c++}
+\end{leftbar}
+
+\begin{leftbar}
+\begin{c++}
+void GrpcServer::Create(
+    const ServerDef& server_def, Env* env,
+    std::unique_ptr<ServerInterface>* out_server) {
+  auto ret = std::make_unique<GrpcServer>(server_def, env);
+  ret->Init();
+  *out_server = std::move(ret);
+}
+\end{c++}
+\end{leftbar}
+
+如\refig{cc-server-model}所示，\code{GrpcServer::Init}将完成\code{GrpcServer}领域对象的初始化，主要包括如下\ascii{3}个基本过程。
+
+\begin{enum}
+  \eitem{初始化\code{MasterEnv}实例；}  
+  \eitem{初始化\code{WorkerEnv}实例；}  
+  \eitem{创建并启动\code{grpc::Server}}    
+    \begin{enum}
+    \eitem{初始化\code{MasterService}}      
+    \begin{nitemize}
+      \eitem{创建\code{Master}实例；}  
+      \eitem{创建\code{MasterService}实例；}
+    \end{nitemize}
+    \eitem{初始化\code{WorkerService}}          
+    \begin{nitemize}          
+      \eitem{创建\code{Worker}实例；}  
+      \eitem{创建\code{WorkerService}实例。}
+    \end{nitemize}      
+    \end{enum}
+\end{enum}
+
+为了更好地理解整个\code{GrpcServer}实例的初始化过程，此处对实现做了局部的重构。首先，它初始化\code{MasterEnv, WorkerEnv}实例；然后，创建并启动\code{grpc::Server}服务器。
+
+\begin{leftbar}
+\begin{c++}
+void GrpcServer::Init() {
+  InitMasterEnv();
+  InitWorkerEnv();
+  StartGrpcServer();
+}
+\end{c++}
+\end{leftbar}
+
+\subsubsection{初始化MasterEnv}
+
+\code{MasterEnv}持有\code{Master}运行时的上下文环境，它与\code{GrpcServer}具有相同的生命周期，因此整个\code{Master}的运行时都是可见的。
+
+如\refig{dist-master-env}所示，\code{LocalDevices}用于获取本地设备集；\code{WorkerCacheFactory}用于创建\code{WorkerCacheInterface}实例；\code{WorkerCacheInterface}用于创建\code{MasterInterface}实例，后者用于调用远端\code{MasterService}服务；\code{MasterSessionFactory}用于创建\code{MasterSession}实例；\code{OpRegisteryInterface}用于查询特定\code{OP}的元数据；\code{Env}用于获取跨平台的\ascii{API}接口。其中，下文将重点讨论\code{WorkerCacheInterface}的创建过程。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{figures/dist-master-env.png}
+\caption{\code{MasterEnv}模型}
+ \label{fig:dist-master-env}
+\end{figure}
+
+\subsubsection{初始化WorkerEnv}
+
+\code{WorkerEnv}持有\code{Worker}运行时的上下文环境，它与\code{GrpcServer}具有相同的生命周期，因此整个\code{Worker}的运行时都是可见的。
+
+如\refig{dist-worker-env}所示，\code{LocalDevices}用于获取本地设备集；\code{DeviceManager}用于管理本地设备集和远端设备集；\code{SessionManager}用于管理\code{WorkerSession}的集合；\code{RendezvousManager}用于管理\code{Rendezvous}实例集；\code{ThreadPool}将会自动从计算池中分配一个线程，启动\ascii{OP}的\ascii{Kernel}算子的执行；\code{Env}用于获取跨平台的\ascii{API}接口。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{figures/dist-worker-env.png}
+\caption{\code{WorkerEnv}模型}
+ \label{fig:dist-worker-env}
+\end{figure}
+
+\subsubsection{启动grpc::Server}
+
+系统实现采用构建器创建\code{grpc::Server}实例。首先，配置\code{grpc::Server}的服务选项；然后，分别构建\code{MasterService}实例和\code{WorkerService}实例。最后，调用\code{builder.BuildAndStart}方法启动\code{grpc::Server}服务器。
+
+需要注意的是，\code{grpc::Server}启动时，\code{GrpcServer}依然处于\code{New}状态，
+\code{grpc::Server}暂时还未对外提供\code{MasterService}服务和\code{WorkerService}服务。直至\code{GrpcServer}迁移至\code{Started}状态位置，\code{grpc::Server}才真正对外提供\code{MasterService}服务和\code{WorkerService}服务。
+
+\begin{leftbar}
+\begin{c++}
+void InitServerBuilder(::grpc::ServerBuilder& builder) {
+  builder.AddListeningPort(
+    strings::StrCat("0.0.0.0:", GetRequestedPort()),
+    GetServerCredentials(server_def_), &bound_port_);
+  builder.SetMaxMessageSize(std::numeric_limits<int32>::max());
+  builder.SetOption(
+      std::unique_ptr<::grpc::ServerBuilderOption>(new NoReusePortOption));
+}
+
+void GrpcServer::StartGrpcServer() {
+  ::grpc::ServerBuilder builder;
+
+  InitServerBuilder(builder);
+  InitMasterService(builder);
+  InitWorkerService(builder);
+
+  server_ = builder.BuildAndStart();  
+}
+\end{c++}
+\end{leftbar}
+
+很容易发现，\code{grpc::Server}对外提供\code{MasterService}服务的实体是\code{GrpcMasterService}实例。当消息到达时，将自动回调\code{GrpcMasterService}实例中相应的消息处理函数。其中，在消息处理函数中，其业务逻辑的处理完全依托于\code{Master}的领域对象。
+
+\begin{leftbar}
+\begin{c++}
+std::unique_ptr<Master> GrpcServer::CreateMaster(
+    MasterEnv* master_env) {
+  return std::make_unique<Master>(master_env);
+}
+
+AsyncServiceInterface* NewGrpcMasterService(
+    Master* master, ::grpc::ServerBuilder* builder) {
+  return new GrpcMasterService(master, builder);
+}
+
+void GrpcServer::InitMasterService() {
+  master_impl_ = CreateMaster(&master_env_);
+  master_service_ = NewGrpcMasterService(
+      master_impl_.get(), &builder);  
+}
+\end{c++}
+\end{leftbar}
+
+依次类推，\code{grpc::Server}对外提供\code{WorkerService}服务的实体是\code{GrpcWorkerService}实例。当消息到达时，将自动回调\code{GrpcWorkerService}实例中相应的消息处理函数。其中，在消息处理函数中，其业务逻辑的处理完全依托于\code{GrpcWorker}的领域对象。
+
+\begin{leftbar}
+\begin{c++}
+std::unique_ptr<GrpcWorker> NewGrpcWorker(WorkerEnv* env) {
+  return std::unique_ptr<GrpcWorker>(new GrpcWorker(env));
+}
+
+AsyncServiceInterface* NewGrpcWorkerService(
+    GrpcWorker* worker, ::grpc::ServerBuilder* builder) {
+  return new GrpcWorkerService(worker, builder);
+}
+
+void GrpcServer::InitWorkerService(::grpc::ServerBuilder& builder) {
+  worker_impl_ = NewGrpcWorker(&worker_env_);
+  worker_service_ = NewGrpcWorkerService(
+    worker_impl_.get(), &builder);
+}
+\end{c++}
+\end{leftbar}
+
+\subsubsection{启动服务}
+
+在\code{New}状态，\code{grpc::Server}已经启动，但暂时没有对外提供\code{MasterService}服务和\code{WorkerService}服务。通过调用\code{GrpcServer::Start}方法后，\code{GrpcServer}的状态从\code{New}迁移\code{Started}状态，并启动了两个独立的线程，分别启动\code{MasterService}和\code{WorkerService}的消息处理器。此时，\code{GrpcServer}正式对外提供\code{MasterService}和\code{WorkerService}。
+
+\begin{leftbar}
+\begin{c++}
+Status GrpcServer::Start() {
+  mutex_lock l(mu_);
+  switch (state_) {
+    case NEW: {
+      master_thread_.reset(
+          env_->StartThread(ThreadOptions(), "TF_master_service",
+                            [this] { master_service_->HandleRPCsLoop(); }));
+      worker_thread_.reset(
+          env_->StartThread(ThreadOptions(), "TF_worker_service",
+                            [this] { worker_service_->HandleRPCsLoop(); }));
+      state_ = STARTED;
+      return Status::OK();
+    }
+    case STARTED:
+      LOG(INFO) << "Server already started(" << target() << ")";    
+      return Status::OK();
+    case STOPPED:
+    default:
+      CHECK(false);
+  }
+}
+\end{c++}
+\end{leftbar}
+
+\subsubsection{等待终止服务}
+
+为了持久地对外提供\code{MasterService}服务和\code{WorkerService}服务，需要分别对线程\code{TF\_master\_service}和\code{TF\_worker\_service}实施\code{join}操作，使得主线程挂起，直至这两个线程终止。
+
+通过调用\code{GrpcServer::Join}方法，当\code{GrpcServer}处于\code{Started}或\code{Stoped}状态时，它将自动调用\code{Thread}的析构函数。
+
+\begin{leftbar}
+\begin{c++}
+Status GrpcServer::Join() {
+  mutex_lock l(mu_);
+  switch (state_) {
+    case NEW:
+      // Prevent the server from being started subsequently.
+      state_ = STOPPED;
+      return Status::OK();
+    case STARTED:
+    case STOPPED:
+      master_thread_.reset();
+      worker_thread_.reset();
+      return Status::OK();
+    default:
+      CHECK(false);
+  }
+}
+\end{c++}
+\end{leftbar}
+
+例如，基于\code{C++}标准库实现的\code{StdThread}中，其析构函数将调用\code{std::thread}的\code{join}方法。
+
+\begin{leftbar}
+\begin{c++}
+struct StdThread : Thread {
+  StdThread(const ThreadOptions&, const string&, 
+      std::function<void()> fn)
+    : thread_(fn) {
+  }
+
+  ~StdThread() override { 
+    thread_.join(); 
+  }
+
+ private:
+  std::thread thread_;
+};
+\end{c++}
+\end{leftbar}
+
+\subsubsection{终止服务}
+
+遗憾的是，目前\code{GrpcServer}并不能优雅地退出。因此，在工程实践环境中，\tf{}的分布式运行时常常需要借助于\code{Kubernetes}，实现\code{GrpcServer}服务的自动管理。
+
+\begin{leftbar}
+\begin{c++}
+Status GrpcServer::Stop() {
+  mutex_lock l(mu_);
+  switch (state_) {
+    case NEW:
+      state_ = STOPPED;
+      return Status::OK();
+    case STARTED:
+      return errors::Unimplemented(
+          "Clean shutdown is not currently implemented");
+    case STOPPED:
+      LOG(INFO) << "Server already stopped(" << target() << ")";
+      return Status::OK();
+    default:
+      CHECK(false);
+  }
+}
+\end{c++}
+\end{leftbar}
+
+\subsection{创建WorkerCacheInterface}
+
+介绍完\code{GrpcServer}状态机模型之后，再回到之前遗留的一个问题。\code{MasterEnv}持有\code{WorkerCacheInterface}实例，它用于查询或延迟创建\code{WorkerInterface}；其中，\code{WorkerInterface}用于访问远端\code{WorkerService}的服务。
+
+\subsubsection{工厂方法：GrpcServer::WorkerCacheFactory}
+
+在初始化\code{MasterEnv}时，通过调用工厂方法\code{GrpcServer::WorkerCacheFactory}创建\code{WorkerCacheInterface}实例。其中，\code{WorkerCacheFactoryOptions}等价于\code{ServerDef}，它包含\code{ClusterDef}，及其\code{job\_name:task\_index}信息。因此，经过\code{ParseChannelSpec}得到的\code{GrpcChannelSpec}实例，等价于\code{ClusterSpec}，它包含了集群的基本配置信息。
+
+\begin{leftbar}
+\begin{c++}
+Status GrpcServer::WorkerCacheFactory(
+    const WorkerCacheFactoryOptions& options,
+    WorkerCacheInterface** worker_cache) {
+
+  GrpcChannelSpec channel_spec;
+  TF_RETURN_IF_ERROR(ParseChannelSpec(options, &channel_spec));
+
+  std::unique_ptr<GrpcChannelCache> channel_cache(
+      NewGrpcChannelCache(channel_spec, GetChannelCreationFunction()));
+
+  string name_prefix = strings::StrCat(
+      "/job:", *options.job_name, "/replica:0",
+      "/task:", options.task_index);
+
+  *worker_cache = NewGrpcWorkerCacheWithLocalWorker(
+      channel_cache.release(), worker_impl_.get(), name_prefix);
+  return Status::OK();
+}
+\end{c++}
+\end{leftbar}
+
+\subsubsection{工厂方法：NewGrpcChannelCache}
+
+\code{NewGrpcChannelCache}用于创建\code{GrpcChannelCache}实例，\code{GrpcChannelCache}可以根据\code{Worker}的名称，获取或延迟创建相应的\code{grpc::Channel}实例。其中，一个\ascii{Job}创建一个\code{SparseGrpcChannelCache}实例，\code{MultiGrpcChannelCache}持有多个\code{SparseGrpcChannelCache}，这是一种典型的组合模式的应用，下文将详细讲解\code{GrpcChannelCache}的设计。
+
+\begin{leftbar}
+\begin{c++}
+GrpcChannelCache* NewGrpcChannelCache(
+    const GrpcChannelSpec& spec,
+    ChannelCreationFunction channel_func) {
+  std::vector<GrpcChannelCache*> caches;
+  for (auto& job : spec.host_ports_jobs()) {
+    caches.push_back(
+        new SparseGrpcChannelCache(
+            job.job_id, job.host_ports, channel_func));
+  }
+  return new MultiGrpcChannelCache(caches);
+}
+\end{c++}
+\end{leftbar}
+
+\subsubsection{工厂方法：NewGrpcWorkerCacheWithLocalWorker}
+
+而工厂方法\code{NewGrpcWorkerCacheWithLocalWorker}，用于创建带有本地\code{Worker}的\code{GrpcWorkerCache}实例。
+
+\begin{leftbar}
+\begin{c++}
+WorkerCacheInterface* NewGrpcWorkerCacheWithLocalWorker(
+    GrpcChannelCache* cc, WorkerInterface* local_worker,
+    const string& local_target) {
+  return new GrpcWorkerCache(cc, local_worker, local_target);
+}
+\end{c++}
+\end{leftbar}
+
+\subsubsection{工厂方法：GrpcServer::GetChannelCreationFunction}
+
+\code{GetChannelCreationFunction}的设计使用了\ascii{C++}函数式编程的思想，它返回了一个用于创建\code{grpc::Channel}实例的函数对象。但不幸的是，已存在的\code{NewHostPortGrpcChannel}函数与\code{ChannelCreationFunction}接口不匹配。因此，此处使用了名为\code{ConvertToChannelCreationFunction}的适配器，将\code{NewHostPortGrpcChannel}变换为\code{ChannelCreationFunction}。
+
+\begin{leftbar}
+\begin{c++}
+using SharedGrpcChannelPtr = std::shared_ptr<::grpc::Channel>;
+using ChannelCreationFunction = std::function<SharedGrpcChannelPtr(string)>;
+
+Status NewHostPortGrpcChannel(const string& target,
+    SharedGrpcChannelPtr* channel) {
+  ::grpc::ChannelArguments args;
+  args.SetInt("grapc.arg.max.message_length", 
+              std::numeric_limits<int32>::max());
+  args.SetInt("grpc.testing.fixed_reconnect_backoff_ms", 
+              1000);
+
+  *channel = ::grpc::CreateCustomChannel(
+      "dns:///" + target, ::grpc::InsecureChannelCredentials(), args);
+  return Status::OK();
+}
+
+ChannelCreationFunction ConvertToChannelCreationFunction(
+  const std::function<Status(string, SharedGrpcChannelPtr*)>& new_channel) {
+  return [new_channel_func](const string& target) -> SharedGrpcChannelPtr {
+    SharedGrpcChannelPtr channel_ptr;
+    if (new_channel(target, &channel_ptr).ok()) {
+      return channel_ptr;
+    } else {
+      return nullptr;
+    }
+  };
+}
+
+ChannelCreationFunction GrpcServer::GetChannelCreationFunction() const {
+  return ConvertToChannelCreationFunction(NewHostPortGrpcChannel);
+}
+\end{c++}
+\end{leftbar}
+
+至此，我们理顺了\code{GrpcChannelCache}与\code{WorkerCacheInterface}的创建过程，但是它们是用来干什么呢？事实上，\code{WorkerCacheInterface}用于获取\code{WorkerInterface}实例，后者用于访问远端\code{WorkerSerivice}服务的，其工作原理非常简单。
+
+\begin{enum}
+  \eitem{获取集群中所有\code{Worker}的名字列表；}
+  \eitem{根据\code{Worker}的名字创建\ascii{RPC}通道；}  
+  \eitem{根据\code{Worker}的\ascii{RPC}通道，创建\code{GrpcRemoteWorker}实例。}
+\end{enum}
+
+其中，\code{GrpcRemoteWorker}是\code{WorkerInterface}的具体实现；\code{GrpcChannelCache}负责获取\code{Worker}的名称，及其创建\code{Worker}相应的\code{grpc::Channel}。
+
+\subsection{创建Worker的RPC通道}
+
+\code{GrpcChannelCache}用于获取或创建集群中远端\code{Worker}的\ascii{RPC}通道。其中，\code{ListWorkers}用于返回集群中\code{Worker}的名称列表。\code{TranslateTask}用于将\code{Worker}的名称转换为\code{host:port}的地址信息。\code{FindWorkerChannel}从缓存中查找\code{grpc::Channel}实例；如果未找到，则根据地址信息动态创建一个\code{grpc::Channel}实例，并添加至缓存中。
+
+\begin{leftbar}
+\begin{c++}
+typedef std::shared_ptr<::grpc::Channel> SharedGrpcChannelPtr;
+
+struct GrpcChannelCache {
+  virtual ~GrpcChannelCache() {}
+  virtual void ListWorkers(std::vector<string>* workers) const = 0;
+  virtual SharedGrpcChannelPtr FindWorkerChannel(const string& target) = 0;
+  virtual string TranslateTask(const string& task) = 0;
+};
+\end{c++}
+\end{leftbar}
+
+\subsubsection{隐式树}
+
+如\refig{dist-grpc-channel-cache}所示，\code{GrpcChannelCache}类层次结构遵循隐式的“树型”结构，\code{SparseGrpcChannelCache}是树节点，其每个实例对应一个\ascii{Job}实例。而\code{MultiGrpcChannelCache}则持有多个\code{SparseGrpcChannelCache}实例，其每个实例对应多个\code{Job}实例。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=1.0\textwidth]{figures/dist-grpc-channel-cache.png}
+\caption{组合创建GRPC通道}
+ \label{fig:dist-grpc-channel-cache}
+\end{figure}
+
+\subsubsection{缓存机制}
+
+为了避免每次实时创建\code{grpc::Channel}实例的开销，引入了\code{CachingGrpcChannelCache}，它在查找\code{grpc::Channel}的过程使用了缓存技术。当缓存中查找失败时，通过调用\code{FindChannelOnce}延迟地动态创建\code{grpc::Channel}实例，并添加至缓存中。
+
+\begin{leftbar}
+\begin{c++}
+struct CachingGrpcChannelCache : GrpcChannelCache {
+  SharedGrpcChannelPtr FindWorkerChannel(const string& target) override {
+    SharedGrpcChannelPtr ch = nullptr;
+    {
+      mutex_lock l(mu_);
+      ch = gtl::FindPtrOrNull(channels_, target);
+      if (ch) {
+        return ch;
+      }
+    }
+    ch = FindChannelOnce(target);
+    if (ch) {
+      mutex_lock l(mu_);
+      channels_.insert({target, ch});
+    }
+    return ch;
+  }
+
+ protected:
+  virtual SharedGrpcChannelPtr FindChannelOnce(const string& target) = 0;
+
+ private:
+  mutex mu_;
+  std::unordered_map<string, SharedGrpcChannelPtr> channels_;
+};
+\end{c++}
+\end{leftbar}
+
+\subsubsection{叶子节点}
+
+\code{SparseGrpcChannelCache}的每个实例对应一个\ascii{Job}实例，它为某个\ascii{Job}创建相应的\code{grpc::Channel}实例集，每个\ascii{Task}对应一个\code{grpc::Channel}。
+
+其中，\code{FindChannelOnce}通过调用\code{TranslateTask}，从\code{Worker}名称中提取对应的\code{task\_id}，然后再从\code{host\_ports\_}中索引出\code{host:port}的地址信息，以此地址调用工厂方法\code{channel\_func\_}创建相应的\code{grpc::Channel}实例。因此，它主要负责如下三个职责：
+
+\begin{enum}
+  \eitem{通过\code{ListWorkers}返回该\ascii{Job}对应的\ascii{Task}名称列表；例如，\code{/job:ps}返回\code{[/job:ps/replica:0/task:0, /job:ps/replica:0/task:1]}；}
+  \eitem{通过\code{TranslateTask}，并根据特定\ascii{Task}名称，索引\code{host:port}的地址信息；例如，\code{/job:ps/replica:0/task:0}索引的地址为\code{ps0:2222}；}
+  \eitem{通过\code{FindChannelOnce}，并根据特定\ascii{Task}名称，创建对应的\code{grpc::Channel}实例。例如，\code{/job:ps/replica:0/task:0}，创建以\code{ps0:2222}为地址的\code{grpc::Channel}实例。}
+\end{enum}
+
+\begin{leftbar}
+\begin{c++}
+static string MakeAddress(const string& job, int task) {
+  return strings::StrCat("/job:", job, "/replica:0/task:", task);
+}
+
+struct SparseGrpcChannelCache : CachingGrpcChannelCache {
+  SparseGrpcChannelCache(
+      const string& job_id,
+      const std::map<int, string>& host_ports,
+      ChannelCreationFunction channel_func)
+      : job_id_(job_id), host_ports_(host_ports),
+        channel_func_(std::move(channel_func)) {
+  }
+
+  void ListWorkers(std::vector<string>* workers) const override {
+    workers->reserve(workers->size() + host_ports_.size());
+    for (const auto& id_host_port : host_ports_) {
+      workers->emplace_back(MakeAddress(job_id_, id_host_port.first));
+    }
+  }
+
+  string TranslateTask(const string& target) override {
+    DeviceNameUtils::ParsedName parsed;
+    if (!DeviceNameUtils::ParseFullName(target, &parsed)) {
+      return "";
+    }
+    auto iter = host_ports_.find(parsed.task);
+    return iter == host_ports_.end() ? "" : iter->second;
+  }
+
+ protected:
+  SharedGrpcChannelPtr FindChannelOnce(const string& target) override {
+    auto host_port = TranslateTask(target);
+    if (host_port.empty()) {
+      return nullptr;
+    }
+    return channel_func_(host_port);
+  }
+
+ private:
+  const string job_id_;
+  const std::map<int, string> host_ports_;
+  const ChannelCreationFunction channel_func_;
+};
+\end{c++}
+\end{leftbar}
+
+\subsubsection{非叶子节点}
+
+\code{MultiGrpcChannelCache}通过\code{caches\_}持有多个\code{SparseGrpcChannelCache}实例，实现整个集群所有\ascii{Worker}节点的\code{grpc::Channel}的组合创建。为了进一步提高\code{SparseGrpcChannelCache}实例的查找过程，\code{MultiGrpcChannelCache}缓存了已访问过的\code{SparseGrpcChannelCache}实例；只有当缓存中查找\code{SparseGrpcChannelCache}实例失败后，才尝试从\code{caches\_}列表中索引相应的\code{SparseGrpcChannelCache}实例，并自动添加至缓存中。
+
+\begin{leftbar}
+\begin{c++}
+class MultiGrpcChannelCache : public CachingGrpcChannelCache {
+ public:
+  explicit MultiGrpcChannelCache(
+      const std::vector<GrpcChannelCache*>& caches) 
+      : caches_(caches) {}
+
+  ~MultiGrpcChannelCache() override {
+    for (auto cache : caches_) {
+      delete cache;
+    }
+  }
+
+  void ListWorkers(std::vector<string>* workers) const override {
+    for (auto cache : caches_) {
+      cache->ListWorkers(workers);
+    }
+  }
+
+  string TranslateTask(const string& target) override {
+    mutex_lock l(mu_);  // could use reader lock
+    auto cache = gtl::FindPtrOrNull(target_caches_, target);
+    if (cache == nullptr) {
+      for (auto c : caches_) {
+        string r = c->TranslateTask(target);
+        if (!r.empty()) {
+          target_caches_.insert({target, c});
+          cache = c;
+          break;
+        }
+      }
+    }
+    return cache->TranslateTask(target);
+  }
+
+ protected:
+  SharedGrpcChannelPtr FindChannelOnce(const string& target) override {
+    for (auto cache : caches_) {
+      auto ch = cache->FindWorkerChannel(target);
+      if (ch) {
+        mutex_lock l(mu_);
+        target_caches_.insert({target, cache});
+        return ch;
+      }
+    }
+    return nullptr;
+  }
+
+ private:
+  // List of channels used by this MultiGrpcChannelCache.
+  const std::vector<GrpcChannelCache*> caches_;
+
+  mutex mu_;
+  // The same GrpcChannelCache can appear multiple times in the cache.
+  std::unordered_map<string, GrpcChannelCache*> target_caches_;
+};
+\end{c++}
+\end{leftbar}
+
+\subsection{创建WorkerInterface}
+
+如\refig{dist-worker-cache-interface}所示，\code{GrpcWorkerCache}持有\code{GrpcChannelCache}对象，并通过它创建\code{grpc::Channel}实例，从而实现了\code{GrpcRemoteWorker}实例的动态创建。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=1.0\textwidth]{figures/dist-worker-cache-interface.png}
+\caption{多态创建\code{WorkerInterface}实例}
+ \label{fig:dist-worker-cache-interface}
+\end{figure}
+
+\begin{leftbar}
+\begin{c++}
+struct GrpcWorkerCache : WorkerCachePartial {
+  GrpcWorkerCache(
+      GrpcChannelCache* channel_cache,
+      WorkerInterface* local_worker,
+      const string& local_target)
+      : local_target_(local_target),
+        local_worker_(local_worker),
+        channel_cache_(channel_cache) {}
+
+  ~GrpcWorkerCache() override {
+    live_rpc_counter_.WaitUntilUnused();
+    delete channel_cache_;
+  }
+
+  void ListWorkers(std::vector<string>* workers) const override {
+    channel_cache_->ListWorkers(workers);
+  }
+
+  WorkerInterface* CreateWorker(const string& target) override {
+    if (target == local_target_) {
+      return local_worker_;
+    } else {
+      auto channel = channel_cache_->FindWorkerChannel(target);
+      if (!channel) return nullptr;
+      return new GrpcRemoteWorker(&live_rpc_counter_, std::move(channel),
+                                  &completion_queue_, &logger_);
+    }
+  }
+
+  void ReleaseWorker(const string& target, 
+      WorkerInterface* worker) override {
+    if (target != local_target_) {
+      WorkerCacheInterface::ReleaseWorker(target, worker);
+    }
+  }
+
+ private:
+  string local_target_;
+  WorkerInterface* local_worker_;  // Not owned.
+  GrpcCounter live_rpc_counter_;
+  GrpcChannelCache* channel_cache_;  // Owned.
+  ::grpc::CompletionQueue completion_queue_;
+  WorkerCacheLogger logger_;
+};
+\end{c++}
+\end{leftbar}
+
+\end{content}
+
 \section{会话控制}
 
 \begin{content}
@@ -1381,7 +1768,7 @@ TF_DeprecatedSession* TF_NewDeprecatedSession(
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.6\textwidth]{figures/dist-grpc-session-factory.png}
+\includegraphics[width=0.7\textwidth]{figures/dist-grpc-session-factory.png}
 \caption{多态创建GrpcSession}
  \label{fig:dist-grpc-session-factory}
 \end{figure}
@@ -1652,9 +2039,282 @@ Status MasterSession::Create(
 \end{c++}
 \end{leftbar}
 
-\subsection{创建\code{WorkerSession}}
+\subsection{获取远端设备集}
 
-如果没有动态配置集群(默认的分布式配置环境)，则不会广播所有\ascii{Worker}动态地创建\code{WorkerSession}。事实上，每个\ascii{Worker}都存在一个\code{SessionMgr}实例，它持有一个名为\code{legacy\_session\_}的\code{WorkerSession}实例。因此，每个\ascii{Worker}存在一个全局唯一的\code{WorkerSession}实例。
+如\refig{dist-worker-get-status}所示，在创建\code{MasterSession}之前，\code{MasterSession}会轮询所有的\code{Worker}实例，获取远端所有\code{Worker}的设备信息。借助于\code{DeviceFinder}的设备查找器，调用\code{DeviceFinder::GetRemoteDevices}获取远端设备集。
+
+它的工作原理非常简单，它根据\code{GrpcWorkerCache::ListWorkers}获取集群中所有的\ascii{Worker}的名字列表；然后，根据\code{worker\_name}的名称，调用\code{GrpcWorkerCache::CreateWorker}工厂方法创建\code{WorkerInterface}实例，后者用于访问远端\code{WorkerService}服务。最后，通过\code{WorkerInterface}向远端\ascii{Worker}列表广播发送\code{GetStatusRequest}请求消息，从而实现远端设备集的获取。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/dist-worker-get-status.png}
+\caption{获取远端设备集}
+ \label{fig:dist-worker-get-status}
+\end{figure}
+
+\subsubsection{设备查找器}
+
+\code{DeviceFinder}实现了一个函数对象，其实现了远端设备查找的算法，其过程分为三个步骤：
+
+\begin{enum}
+  \eitem{\code{Start}: 并发地广播\code{GetStatusRequest}给集群中所有\code{Worker}实例；}
+  \eitem{\code{Wait}: 收齐所有\code{Worker}返回的\code{GetStatusResponse}消息；}
+  \eitem{\code{GetRemoteDevices}: 获取查询结果，并将其返回给客户；}
+\end{enum}
+
+\begin{leftbar}
+\begin{c++}
+struct DeviceFinder {
+  static Status DeviceFinder::GetRemoteDevices(
+      MasterEnv* env,
+      WorkerCacheInterface* worker_cache,
+      std::vector<std::unique_ptr<Device>>* out_remote) {
+    DeviceFinder finder(env, worker_cache);
+    finder.Start();
+    TF_RETURN_IF_ERROR(finder.Wait());
+    finder.GetRemoteDevices(env->local_devices, out_remote);
+    return Status::OK();
+  }
+};
+\end{c++}
+\end{leftbar}
+
+为了控制收齐多个\code{Worker}的\code{GetStatusResponse}消息，此处使用了\code{num\_pending\_}的计数器，由\code{DeviceFinder::Start}设置初始值为\code{Worker}的数目。
+
+当收到来自某个\code{Worker}的\code{GetStatusResponse}消息，则回调\code{WhenDone}，将计数器减\ascii{1}。当计数器减至为\ascii{0}时，通过调用\code{pending\_zero\_.notify\_all}，呼醒\code{pending\_zero\_.wait\_for}语句，随后便可以通过\code{finder.GetRemoteDevices}获取查询结果了。
+
+其中，在\code{DeviceFinder::Start}中，通过\code{NewRemoteDevices}向所有\code{Worker}广播\code{GetStatusRequest}消息查询相应的设备信息，下一节将重点描述其实现过程。
+
+\begin{leftbar}
+\begin{c++}
+struct DeviceFinder {
+ private:
+  explicit DeviceFinder(
+      MasterEnv* env,
+      WorkerCacheInterface* worker_cache)
+      : env_(env), worker_cache_(worker_cache) {
+    worker_cache->ListWorkers(&targets_);
+    seen_targets_.assign(targets_.size(), false);
+  }
+
+  ~DeviceFinder() {
+    for (auto dev : found_) delete dev;
+  }
+
+  void Start() {
+    {
+      mutex_lock l(mu_);
+      num_pending_ = targets_.size();
+    }
+
+    // Talk to all workers to get the list of available devices.
+    using std::placeholders::_1;
+    using std::placeholders::_2;
+    for (size_t i = 0; i < targets_.size(); ++i) {
+      NewRemoteDevices(env_->env, worker_cache_, targets_[i],
+                       std::bind(&ME::WhenFound, this, i, _1, _2));
+    }
+  }
+
+  // The caller takes the ownership of returned remote devices.
+  void GetRemoteDevices(
+      const std::vector<Device*>& local,
+      std::vector<std::unique_ptr<Device>>* remote) {
+    std::unordered_set<string> names(local.size());
+    for (auto dev : local) {
+      names.insert(dev->name());
+    }
+
+    mutex_lock l(mu_);
+    for (auto dev : found_) {
+      auto& name = dev->name();
+      if (names.insert(name).second) {
+        remote->push_back(std::unique_ptr<Device>(dev));
+      } else {
+        delete dev;
+      }
+    }
+    found_.clear();
+  }
+
+  Status Wait() {
+    mutex_lock l(mu_);
+    while (num_pending_ != 0) {
+      pending_zero_.wait_for(l, std::chrono::milliseconds(10 * 1000));
+      if (num_pending_ != 0) {
+        for (size_t i = 0; i < targets_.size(); ++i) {
+          if (!seen_targets_[i]) {
+            LOG(INFO)
+                << "CreateSession still waiting for response from worker: "
+                << targets_[i];
+          }
+        }
+      }
+    }
+    return status_;
+  }
+
+  void WhenFound(int target_index, const Status& s,
+                 std::vector<Device*>* devices) {
+    mutex_lock l(mu_);
+    seen_targets_[target_index] = true;
+    if (!s.ok()) {
+      status_.Update(s);
+    } else {
+      found_.insert(found_.end(), devices->begin(), devices->end());
+      devices->clear();
+    }
+    --num_pending_;
+    if (num_pending_ == 0) {
+      pending_zero_.notify_all();
+    }
+  }
+
+  typedef DeviceFinder ME;
+  const MasterEnv* env_;
+  WorkerCacheInterface* worker_cache_;
+
+  mutex mu_;
+  int num_pending_ GUARDED_BY(mu_);
+  condition_variable pending_zero_;
+  std::vector<Device*> found_ GUARDED_BY(mu_);
+
+  std::vector<string> targets_;
+  std::vector<bool> seen_targets_ GUARDED_BY(mu_);
+  Status status_;
+};
+\end{c++}
+\end{leftbar}
+
+温馨提示，当\code{num\_pending\_}计数器不为零时，则主线程周期性睡眠\code{10}秒钟，醒来时如果发现存在\ascii{Worker}还未返回响应消息，则打印那些\ascii{Worker}的名称。当看到循环地打印如下信息时，此时应该明白\code{/job:worker/task:2}对应的\code{Server}是否异常退出了，或\ascii{Master}与之相应的\ascii{Worker}之间网络是否发生了异常等，根据具体情况分析和处理。
+
+\begin{leftbar}
+\begin{python}
+CreateSession still waiting for response from worker: /job:worker/task:2
+\end{python}
+\end{leftbar}
+
+\subsubsection{NewRemoteDevices}
+
+\code{NewRemoteDevices}将根据\code{worker\_name}查找\code{WorkerInterface}实例，并发送\code{GetStatusRequest}消息到对应的\code{Worker}获取其设备信息。当消息返回后，将回调\code{cb}的函数对象。其中，从远端\code{Worker}获取的设备信息并非完整，其不包含\code{worker\_name}的信息，因此需要手动地追加上去。
+
+\begin{leftbar}
+\begin{c++}
+void NewRemoteDevices(
+    Env* env, WorkerCacheInterface* worker_cache,
+    const string& worker_name, NewRemoteDevicesDone done) {
+  struct Call {
+    GetStatusRequest req;
+    GetStatusResponse resp;
+  };
+
+  WorkerInterface* wi = worker_cache->CreateWorker(worker_name);
+  Call* call = new Call;
+  auto cb = [env, worker_cache, &worker_name, &done, wi, call](
+      const Status& status) {
+    Status s = status;
+    std::vector<Device*> remote_devices;
+    auto cleanup = gtl::MakeCleanup(
+        [worker_cache, &worker_name, wi, &done, &remote_devices, &s, call] {
+          worker_cache->ReleaseWorker(worker_name, wi);
+          done(s, &remote_devices);
+          delete call;
+        });
+    if (s.ok()) {
+      DeviceNameUtils::ParsedName worker_name_parsed;
+      DeviceNameUtils::ParseFullName(worker_name, &worker_name_parsed);
+
+      remote_devices.reserve(call->resp.device_attributes_size());
+
+      for (auto& da : call->resp.device_attributes()) {
+        DeviceNameUtils::ParsedName device_name_parsed;
+        DeviceNameUtils::ParseFullName(da.name(), &device_name_parsed);
+        
+        DeviceAttributes da_rewritten = da;
+        da_rewritten.set_name(DeviceNameUtils::FullName(
+            worker_name_parsed.job, worker_name_parsed.replica,
+            worker_name_parsed.task, device_name_parsed.type,
+            device_name_parsed.id));
+        auto d = new RemoteDevice(env, da_rewritten);
+        remote_devices.push_back(d);
+      }
+    }
+  };
+  wi->GetStatusAsync(&call->req, &call->resp, cb);
+}
+\end{c++}
+\end{leftbar}
+
+\subsubsection{GrpcRemoteWorker::GetStatusAsync}
+
+\code{GrpcRemoteWorker}是\code{WorkerInterface}的具体实现，它是\ascii{gRPC}的客户端实现，它通过\code{stub}调用远端\code{WorkerService}相应的服务接口。
+
+\begin{leftbar}
+\begin{c++}
+struct GrpcRemoteWorker : WorkerInterface {
+  void GetStatusAsync(const GetStatusRequest* request,
+                      GetStatusResponse* response,
+                      StatusCallback done) override {
+    IssueRequest(request, response, getstatus_, std::move(done));
+  }
+}
+\end{c++}
+\end{leftbar}
+
+\subsubsection{GrpcRemoteWorker::GetStatusAsync}
+
+\code{GrpcWorkerService}是\code{WorkerService}的具体实现。当收到\code{GetStatusRequest}消息，将由\code{GetStatusHandler}回调处理。
+
+\begin{leftbar}
+\begin{c++}
+struct GrpcWorkerService : AsyncServiceInterface {
+  void GetStatusHandler(WorkerCall<GetStatusRequest, GetStatusResponse>* call) {
+    Schedule([this, call]() {
+      Status s = worker_->GetStatus(&call->request, &call->response);
+      call->SendResponse(ToGrpcStatus(s));
+    });
+    ENQUEUE_REQUEST(GetStatus, false);
+  }
+};
+\end{c++}
+\end{leftbar}
+
+\subsubsection{Worker::GetStatusAsync}
+
+\code{Worker::GetStatusAsync}将委托\code{DeviceMgr}实现本地设备信息的汇总，并最终通过\code{GetStatusResponse}消息返回给对端。
+
+\begin{leftbar}
+\begin{c++}
+void Worker::GetStatusAsync(const GetStatusRequest* request,
+                            GetStatusResponse* response, StatusCallback done) {
+  std::vector<DeviceAttributes> devices;
+  env_->device_mgr->ListDeviceAttributes(&devices);
+  response->mutable_device_attributes()->Reserve(devices.size());
+  for (auto& d : devices) {
+    response->add_device_attributes()->Swap(&d);
+  }
+  done(Status::OK());
+}
+\end{c++}
+\end{leftbar}
+
+\code{DeviceMgr}持有本地设备集，实现极为简单。
+
+\begin{leftbar}
+\begin{c++}
+void DeviceMgr::ListDeviceAttributes(
+    std::vector<DeviceAttributes>* devices) const {
+  devices->reserve(devices_.size());
+  for (auto dev : devices_) {
+    devices->emplace_back(dev->attributes());
+  }
+}
+\end{c++}
+\end{leftbar}
+
+\subsection{创建WorkerSession}
+
+当\code{MasterSession}创建成功后，如果没有动态配置集群(默认的分布式配置环境)，则不会广播所有\ascii{Worker}动态地创建\code{WorkerSession}。事实上，每个\ascii{Worker}都存在一个\code{SessionMgr}实例，它持有一个名为\code{legacy\_session\_}的\code{WorkerSession}实例。因此，每个\ascii{Worker}存在一个全局唯一的\code{WorkerSession}实例。
 
 \begin{leftbar}
 \begin{c++}
@@ -1890,7 +2550,7 @@ void Worker::CreateWorkerSessionAsync(
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\textwidth]{figures/dist-worker-session-model.png}
+\includegraphics[width=1.0\textwidth]{figures/dist-worker-session-model.png}
 \caption{\code{WorkerSession}领域模型：可注册和运行多个图实例}
  \label{fig:dist-worker-session-model}
 \end{figure}
@@ -1926,484 +2586,6 @@ Status SessionMgr::CreateSession(const string& session,
   // 5. Store (session\_handle, WorkerSession) pair.
   sessions_.insert(std::make_pair(session, std::move(worker_session)));
   return Status::OK();
-}
-\end{c++}
-\end{leftbar}
-
-\subsection{获取远端设备集}
-
-如\refig{dist-worker-get-status}所示，在创建\code{MasterSession}之前，\code{MasterSession}会尝试\ascii{ping}所有的\code{Worker}实例，获取远端所有\code{Worker}所有的计算设备信息。但是，为了获取远端设备集，需要解决两个基础性的问题。
-
-\begin{enum}
-  \eitem{获取集群中所有\code{Worker}的名字列表；}
-  \eitem{根据\code{Worker}的名字创建\code{WorkerInterface}实例；其中，\code{WorkerInterface}是访问远端\code{Worker}上的\code{WorkerSevice}的本地接口。}
-\end{enum}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.8\textwidth]{figures/dist-worker-get-status.png}
-\caption{获取远端设备集}
- \label{fig:dist-worker-get-status}
-\end{figure}
-
-\subsubsection{创建Worker的RPC通道}
-
-\code{GrpcChannelCache}用于获取或创建集群中所有远端\code{Worker}的\ascii{gRPC}通道。其中，\code{ListWorkers}用于返回集群中所有的\code{Worker}的名称列表。\code{TranslateTask}用于将\code{Worker}的名称转换为\code{host:port}的地址信息。\code{FindWorkerChannel}则用于从缓存中查找\code{grpc::Channel}实例；如果未找到，则根据地址信息动态创建一个\code{grpc::Channel}实例。
-
-\begin{leftbar}
-\begin{c++}
-typedef std::shared_ptr<::grpc::Channel> SharedGrpcChannelPtr;
-
-struct GrpcChannelCache {
-  virtual ~GrpcChannelCache() {}
-  virtual void ListWorkers(std::vector<string>* workers) const = 0;
-  virtual SharedGrpcChannelPtr FindWorkerChannel(const string& target) = 0;
-  virtual string TranslateTask(const string& task) = 0;
-};
-\end{c++}
-\end{leftbar}
-
-如\refig{dist-grpc-channel-cache}所示，\code{GrpcChannelCache}创建\code{grpc::Channel}的查找过程使用了缓存技术，避免每次实时创建\code{grpc::Channel}实例的开销。当缓存中查找失败时，通过调用\code{FindChannelOnce}延迟地动态创建\code{grpc::Channel}实例，并添加至缓存中。
-
-\begin{leftbar}
-\begin{c++}
-struct CachingGrpcChannelCache : GrpcChannelCache {
-  SharedGrpcChannelPtr FindWorkerChannel(const string& target) override {
-    SharedGrpcChannelPtr ch = nullptr;
-    {
-      mutex_lock l(mu_);
-      ch = gtl::FindPtrOrNull(channels_, target);
-      if (ch) {
-        return ch;
-      }
-    }
-    ch = FindChannelOnce(target);
-    if (ch) {
-      mutex_lock l(mu_);
-      channels_.insert({target, ch});
-    }
-    return ch;
-  }
-
- protected:
-  virtual SharedGrpcChannelPtr FindChannelOnce(const string& target) = 0;
-
- private:
-  mutex mu_;
-  std::unordered_map<string, SharedGrpcChannelPtr> channels_;
-};
-\end{c++}
-\end{leftbar}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.8\textwidth]{figures/dist-grpc-channel-cache.png}
-\caption{组合创建GRPC通道}
- \label{fig:dist-grpc-channel-cache}
-\end{figure}
-
-另外，\code{GrpcChannelCache}的类层次结构遵循隐式的“树型”结构，\code{SparseGrpcChannelCache}是树节点，它为某个\ascii{Job}创建相应的\code{grpc::Channel}实例集；其中，每个\ascii{Task}对应一个\code{grpc::Channel}。
-
-\begin{leftbar}
-\begin{c++}
-struct SparseGrpcChannelCache : CachingGrpcChannelCache {
-  SparseGrpcChannelCache(
-      const string& job_id,
-      const std::map<int, string>& host_ports,
-      ChannelCreationFunction channel_func)
-      : job_id_(job_id), host_ports_(host_ports),
-        channel_func_(std::move(channel_func)) {
-  }
-
-  void ListWorkers(std::vector<string>* workers) const override {
-    workers->reserve(workers->size() + host_ports_.size());
-    for (const auto& id_host_port : host_ports_) {
-      workers->emplace_back(MakeAddress(job_id_, id_host_port.first));
-    }
-  }
-
-  string TranslateTask(const string& target) override {
-    DeviceNameUtils::ParsedName parsed;
-    if (!DeviceNameUtils::ParseFullName(target, &parsed)) {
-      return "";
-    }
-    auto iter = host_ports_.find(parsed.task);
-    return iter == host_ports_.end() ? "" : iter->second;
-  }
-
- protected:
-  SharedGrpcChannelPtr FindChannelOnce(const string& target) override {
-    auto host_port = TranslateTask(target);
-    if (host_port.empty()) {
-      return nullptr;
-    }
-    return channel_func_(host_port);
-  }
-
- private:
-  const string job_id_;
-  const std::map<int, string> host_ports_;
-  const ChannelCreationFunction channel_func_;
-};
-\end{c++}
-\end{leftbar}
-
-而\code{MultiGrpcChannelCache}通过\code{caches\_}持有多个\code{SparseGrpcChannelCache}实例，实现整个集群所有\ascii{Worker}节点的\code{grpc::Channel}的组合创建。为了进一步提高\code{grpc::Channel}实例的查找过程，\code{MultiGrpcChannelCache}缓存了访问过的\code{SparseGrpcChannelCache}实例。
-
-\begin{leftbar}
-\begin{c++}
-class MultiGrpcChannelCache : public CachingGrpcChannelCache {
- public:
-  explicit MultiGrpcChannelCache(
-      const std::vector<GrpcChannelCache*>& caches) 
-      : caches_(caches) {}
-
-  ~MultiGrpcChannelCache() override {
-    for (auto cache : caches_) {
-      delete cache;
-    }
-  }
-
-  void ListWorkers(std::vector<string>* workers) const override {
-    for (auto cache : caches_) {
-      cache->ListWorkers(workers);
-    }
-  }
-
-  string TranslateTask(const string& target) override {
-    mutex_lock l(mu_);  // could use reader lock
-    auto cache = gtl::FindPtrOrNull(target_caches_, target);
-    if (cache == nullptr) {
-      for (auto c : caches_) {
-        string r = c->TranslateTask(target);
-        if (!r.empty()) {
-          target_caches_.insert({target, c});
-          cache = c;
-          break;
-        }
-      }
-    }
-    return cache->TranslateTask(target);
-  }
-
- protected:
-  SharedGrpcChannelPtr FindChannelOnce(const string& target) override {
-    for (auto cache : caches_) {
-      auto ch = cache->FindWorkerChannel(target);
-      if (ch) {
-        mutex_lock l(mu_);
-        target_caches_.insert({target, cache});
-        return ch;
-      }
-    }
-    return nullptr;
-  }
-
- private:
-  // List of channels used by this MultiGrpcChannelCache.
-  const std::vector<GrpcChannelCache*> caches_;
-
-  mutex mu_;
-  // The same GrpcChannelCache can appear multiple times in the cache.
-  std::unordered_map<string, GrpcChannelCache*> target_caches_;
-};
-\end{c++}
-\end{leftbar}
-
-\subsubsection{创建WorkerInterface}
-
-如\refig{dist-worker-cache-interface}所示，\code{GrpcWorkerCache}持有\code{GrpcChannelCache}对象，并通过它创建\code{grpc::Channel}实例，从而实现了\code{GrpcRemoteWorker}实例的动态创建。
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.8\textwidth]{figures/dist-worker-cache-interface.png}
-\caption{多态创建\code{WorkerInterface}实例}
- \label{fig:dist-worker-cache-interface}
-\end{figure}
-
-\begin{leftbar}
-\begin{c++}
-struct GrpcWorkerCache : WorkerCachePartial {
-  GrpcWorkerCache(
-      GrpcChannelCache* channel_cache,
-      WorkerInterface* local_worker,
-      const string& local_target)
-      : local_target_(local_target),
-        local_worker_(local_worker),
-        channel_cache_(channel_cache) {}
-
-  ~GrpcWorkerCache() override {
-    live_rpc_counter_.WaitUntilUnused();
-    delete channel_cache_;
-  }
-
-  void ListWorkers(std::vector<string>* workers) const override {
-    channel_cache_->ListWorkers(workers);
-  }
-
-  WorkerInterface* CreateWorker(const string& target) override {
-    if (target == local_target_) {
-      return local_worker_;
-    } else {
-      auto channel = channel_cache_->FindWorkerChannel(target);
-      if (!channel) return nullptr;
-      return new GrpcRemoteWorker(&live_rpc_counter_, std::move(channel),
-                                  &completion_queue_, &logger_);
-    }
-  }
-
-  void ReleaseWorker(const string& target, 
-      WorkerInterface* worker) override {
-    if (target != local_target_) {
-      WorkerCacheInterface::ReleaseWorker(target, worker);
-    }
-  }
-
- private:
-  string local_target_;
-  WorkerInterface* local_worker_;  // Not owned.
-  GrpcCounter live_rpc_counter_;
-  GrpcChannelCache* channel_cache_;  // Owned.
-  ::grpc::CompletionQueue completion_queue_;
-  WorkerCacheLogger logger_;
-};
-\end{c++}
-\end{leftbar}
-
-\subsubsection{获取远端设备集}
-
-实现通过\code{DeviceFinder::GetRemoteDevices}获取远端设备集。它的工作原理非常简单，它根据\code{GrpcWorkerCache::ListWorkers}获取集群中所有的\ascii{Worker}的名字列表；然后，根据\code{worker\_name}的名称，通过调用\code{GrpcWorkerCache::CreateWorker}创建访问远端\ascii{Worker}服务的\code{WorkerInterface}实例。最后，通过\code{WorkerInterface}向远端\ascii{Worker}列表广播发送\code{GetStatusRequest}请求消息，从而实现远端设备集的获取。
-
-为了控制收齐多个\code{Worker}的\code{GetStatusResponse}消息，此处使用了\code{num\_pending\_}的计数器，它初始值为\code{Worker}的数目，由\code{DeviceFinder::Start}设置。当收到一条来自每个\code{Worker}的\code{GetStatusResponse}消息，则回调\code{DeviceFinder::WhenDone}函数，将计数器减\ascii{1}。当计数器减到\ascii{0}时，通过调用\code{pending\_zero\_.notify\_all}，呼醒\code{pending\_zero\_.wait\_for}，随后便可以通过\code{finder.GetRemoteDevices}获取查询结果了。
-
-其中，在\code{DeviceFinder::Start}中，通过\code{NewRemoteDevices}向所有\code{Worker}广播\code{GetStatusRequest}消息，查询相应的设备信息，下一节将重点描述其实现过程。
-
-\begin{leftbar}
-\begin{c++}
-struct DeviceFinder {
-  static Status GetRemoteDevices(
-      MasterEnv* env,
-      WorkerCacheInterface* worker_cache,
-      std::vector<std::unique_ptr<Device>>* out_remote) {
-    DeviceFinder finder(env, worker_cache);
-    finder.Start();
-    TF_RETURN_IF_ERROR(finder.Wait());
-    finder.GetRemoteDevices(env->local_devices, out_remote);
-    return Status::OK();
-  }
-
- private:
-  explicit DeviceFinder(
-      MasterEnv* env,
-      WorkerCacheInterface* worker_cache)
-      : env_(env), worker_cache_(worker_cache) {
-    worker_cache->ListWorkers(&targets_);
-    seen_targets_.assign(targets_.size(), false);
-  }
-
-  ~DeviceFinder() {
-    for (auto dev : found_) delete dev;
-  }
-
-  void Start() {
-    {
-      mutex_lock l(mu_);
-      num_pending_ = targets_.size();
-    }
-
-    // Talk to all workers to get the list of available devices.
-    using std::placeholders::_1;
-    using std::placeholders::_2;
-    for (size_t i = 0; i < targets_.size(); ++i) {
-      NewRemoteDevices(env_->env, worker_cache_, targets_[i],
-                       std::bind(&ME::WhenFound, this, i, _1, _2));
-    }
-  }
-
-  // The caller takes the ownership of returned remote devices.
-  void GetRemoteDevices(
-      const std::vector<Device*>& local,
-      std::vector<std::unique_ptr<Device>>* remote) {
-    std::unordered_set<string> names(local.size());
-    for (auto dev : local) {
-      names.insert(dev->name());
-    }
-
-    mutex_lock l(mu_);
-    for (auto dev : found_) {
-      auto& name = dev->name();
-      if (names.insert(name).second) {
-        remote->push_back(std::unique_ptr<Device>(dev));
-      } else {
-        delete dev;
-      }
-    }
-    found_.clear();
-  }
-
-  Status Wait() {
-    mutex_lock l(mu_);
-    while (num_pending_ != 0) {
-      pending_zero_.wait_for(l, std::chrono::milliseconds(10 * 1000));
-      if (num_pending_ != 0) {
-        for (size_t i = 0; i < targets_.size(); ++i) {
-          if (!seen_targets_[i]) {
-            LOG(INFO)
-                << "CreateSession still waiting for response from worker: "
-                << targets_[i];
-          }
-        }
-      }
-    }
-    return status_;
-  }
-
-  void WhenFound(int target_index, const Status& s,
-                 std::vector<Device*>* devices) {
-    mutex_lock l(mu_);
-    seen_targets_[target_index] = true;
-    if (!s.ok()) {
-      status_.Update(s);
-    } else {
-      found_.insert(found_.end(), devices->begin(), devices->end());
-      devices->clear();
-    }
-    --num_pending_;
-    if (num_pending_ == 0) {
-      pending_zero_.notify_all();
-    }
-  }
-
-  typedef DeviceFinder ME;
-  const MasterEnv* env_;
-  WorkerCacheInterface* worker_cache_;
-
-  mutex mu_;
-  int num_pending_ GUARDED_BY(mu_);
-  condition_variable pending_zero_;
-  std::vector<Device*> found_ GUARDED_BY(mu_);
-
-  std::vector<string> targets_;
-  std::vector<bool> seen_targets_ GUARDED_BY(mu_);
-  Status status_;
-};
-\end{c++}
-\end{leftbar}
-
-温馨提示，当\code{num\_pending\_}计数器不为零时，则主线程周期性睡眠\code{10}秒中，醒来时发现还是没有收齐所有\ascii{Worker}的响应消息，则打印哪些\ascii{Worker}迟迟没有响应。当看到循环地打印信息时，此时你应该明白\code{/job:worker/task:2}对应的\code{Server}是否异常退出了，或\ascii{Master}与相应的\ascii{Worker}之间网络是否发生了异常等，需要根据具体情况分析和处理。
-
-\begin{leftbar}
-\begin{python}
-CreateSession still waiting for response from worker: /job:worker/task:2
-\end{python}
-\end{leftbar}
-
-\subsubsection{NewRemoteDevices}
-
-\begin{leftbar}
-\begin{c++}
-void NewRemoteDevices(
-    Env* env, WorkerCacheInterface* worker_cache,
-    const string& worker_name, NewRemoteDevicesDone done) {
-  struct Call {
-    GetStatusRequest req;
-    GetStatusResponse resp;
-  };
-
-  WorkerInterface* wi = worker_cache->CreateWorker(worker_name);
-  Call* call = new Call;
-  auto cb = [env, worker_cache, worker_name, done, wi, call](
-      const Status& status) {
-    Status s = status;
-    std::vector<Device*> remote_devices;
-    auto cleanup = gtl::MakeCleanup(
-        [&worker_cache, &worker_name, &wi, &done, &remote_devices, &s, call] {
-          worker_cache->ReleaseWorker(worker_name, wi);
-          done(s, &remote_devices);
-          delete call;
-        });
-    if (s.ok()) {
-      DeviceNameUtils::ParsedName worker_name_parsed;
-      DeviceNameUtils::ParseFullName(worker_name, &worker_name_parsed);
-
-      remote_devices.reserve(call->resp.device_attributes_size());
-
-      for (auto& da : call->resp.device_attributes()) {
-        DeviceNameUtils::ParsedName device_name_parsed;
-        DeviceNameUtils::ParseFullName(da.name(), &device_name_parsed);
-        
-        DeviceAttributes da_rewritten = da;
-        da_rewritten.set_name(DeviceNameUtils::FullName(
-            worker_name_parsed.job, worker_name_parsed.replica,
-            worker_name_parsed.task, device_name_parsed.type,
-            device_name_parsed.id));
-        auto d = new RemoteDevice(env, da_rewritten);
-        remote_devices.push_back(d);
-      }
-    }
-  };
-  wi->GetStatusAsync(&call->req, &call->resp, cb);
-}
-\end{c++}
-\end{leftbar}
-
-\subsubsection{GrpcRemoteWorker::GetStatusAsync}
-
-\begin{leftbar}
-\begin{c++}
-struct GrpcRemoteWorker : WorkerInterface {
-  void GetStatusAsync(const GetStatusRequest* request,
-                      GetStatusResponse* response,
-                      StatusCallback done) override {
-    IssueRequest(request, response, getstatus_, std::move(done));
-  }
-}
-\end{c++}
-\end{leftbar}
-
-\subsubsection{GrpcRemoteWorker::GetStatusAsync}
-
-\begin{leftbar}
-\begin{c++}
-struct GrpcWorkerService : AsyncServiceInterface {
-  void GetStatusHandler(WorkerCall<GetStatusRequest, GetStatusResponse>* call) {
-    Schedule([this, call]() {
-      Status s = worker_->GetStatus(&call->request, &call->response);
-      call->SendResponse(ToGrpcStatus(s));
-    });
-    ENQUEUE_REQUEST(GetStatus, false);
-  }
-};
-\end{c++}
-\end{leftbar}
-
-\subsubsection{Worker::GetStatusAsync}
-
-\begin{leftbar}
-\begin{c++}
-void Worker::GetStatusAsync(const GetStatusRequest* request,
-                            GetStatusResponse* response, StatusCallback done) {
-  std::vector<DeviceAttributes> devices;
-  env_->device_mgr->ListDeviceAttributes(&devices);
-  response->mutable_device_attributes()->Reserve(devices.size());
-  for (auto& d : devices) {
-    response->add_device_attributes()->Swap(&d);
-  }
-  done(Status::OK());
-}
-\end{c++}
-\end{leftbar}
-
-\subsubsection{DeviceMgr::ListDeviceAttributes}
-
-\begin{leftbar}
-\begin{c++}
-void DeviceMgr::ListDeviceAttributes(
-    std::vector<DeviceAttributes>* devices) const {
-  devices->reserve(devices_.size());
-  for (auto dev : devices_) {
-    devices->emplace_back(dev->attributes());
-  }
 }
 \end{c++}
 \end{leftbar}
