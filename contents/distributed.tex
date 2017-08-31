@@ -2596,9 +2596,16 @@ Status SessionMgr::CreateSession(const string& session,
 
 \begin{content}
 
-\subsection{Client端}
+\subsection{启动执行}
 
-\subsubsection{GrpcSession}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{figures/dist-run-step-stage-1.png}
+\caption{GprcSession: 启动RunStep}
+ \label{fig:dist-run-step-stage-1}
+\end{figure}
+
+\subsubsection{GrpcSession::Run}
 
 \begin{leftbar}
 \begin{c++}
@@ -2715,6 +2722,7 @@ Status GrpcSession::Run(
     const vector<string>& target_names,
     std::vector<Tensor>* outputs,
     RunMetadata* run_metadata) {
+  // 1. Build run step request.
   unique_ptr<MutableRunStepRequestWrapper> req(
       master_->CreateRunStepRequest());
 
@@ -2724,15 +2732,19 @@ Status GrpcSession::Run(
   BuildRunStepReq(options_, run_options, inputs, 
       output_names, target_names, req.get());
 
+  // 2. Build output tensor names index.
   TensorIndex tensor_index;
   BuildOuputNamesIndex(output_names, tensor_index);
 
+  // 3. Build call options.
   CallOptions call_options;
   BuildCallOptions(req->options(), call_options)
 
+  // 4. Do run step.
   TF_RETURN_IF_ERROR(RunProto(&call_options, 
       req.get(), resp.get()));
 
+  // 5. Save response to outputs.
   return SaveRspToOutputs(tensor_index, output_names, 
       resp.get(), outputs, run_metadata);
 }
@@ -2754,26 +2766,25 @@ Status GrpcSession::RunProto(
 \end{c++}
 \end{leftbar}
 
-\subsubsection{GrpcRemoteMaster}
+\subsubsection{GrpcRemoteMaster::RunStep}
 
 \begin{leftbar}
 \begin{c++}
 struct GrpcRemoteMaster : MasterInterface {
+  using MasterServiceStub = ::grpc::MasterService::Stub;
+
   Status RunStep(CallOptions* call_options, RunStepRequestWrapper* request,
                  MutableRunStepResponseWrapper* response) override {
     ::grpc::ClientContext ctx;
-    ctx.set_fail_fast(false);
-    SetDeadline(&ctx, call_options->GetTimeout());
-    return FromGrpcStatus(stub_->RunStep(&ctx, request->ToProto(),
-                                         get_proto_from_wrapper(response)));
+    return Call(&ctx, call_options, &request->ToProto(),
+                get_proto_from_wrapper(response),
+                &MasterServiceStub::RunStep);
   }
 };
 \end{c++}
 \end{leftbar}
 
-\subsection{Master端}
-
-\subsubsection{GrpcRemoteMaster}
+\subsubsection{GrpcMasterService::RunStepHandler}
 
 \begin{leftbar}
 \begin{c++}
@@ -2818,7 +2829,7 @@ struct GrpcMasterService : AsyncServiceInterface {
 \end{c++}
 \end{leftbar}
 
-\subsubsection{Master}
+\subsubsection{Master::RunStep}
 
 \begin{leftbar}
 \begin{c++}
@@ -2836,7 +2847,7 @@ void Master::RunStep(CallOptions* opts,
 \end{c++}
 \end{leftbar}
 
-\subsubsection{MasterSession：RunStep}
+\subsubsection{MasterSession::Run}
 
 \begin{leftbar}
 \begin{c++}
@@ -2869,11 +2880,11 @@ Status MasterSession::DoRunWithLocalExecution(
   int64 count = 0;
   TF_RETURN_IF_ERROR(StartStep(bgopts, &count, &rcg, false));
 
-  // 2. Register Partitions: build Partitions and register to workers. 
+  // 2. Build and Register partitions to workers. 
   core::ScopedUnref unref(rcg);
   TF_RETURN_IF_ERROR(BuildAndRegisterPartitions(rcg));
 
-  // 3. Run Partitions: notify all of workers to run partitions.
+  // 3. Run partitions: notify all of workers to run partitions.
   uint64 step_id = (random::New64() & ((1uLL << 56) - 1)) | (1uLL << 56);
   Status s = rcg->RunPartitions(env_, step_id, count, &pss, opts, req, resp,
                                 &cancellation_manager_, false);
@@ -2889,13 +2900,13 @@ Status MasterSession::DoRunWithLocalExecution(
 \end{c++}
 \end{leftbar}
 
-\subsubsection{MasterSession：图分裂}
+\subsubsection{MasterSession::BuildAndRegisterPartitions}
 
 \begin{leftbar}
 \begin{c++}
 Status MasterSession::BuildAndRegisterPartitions(ReffedClientGraph* rcg) {
   PartitionOptions popts;
-  popts.node_to_loc = SplitByWorker;
+  popts.node_to_loc = SplitByWorker; // IMPORTANT
   popts.flib_def = rcg->client_graph()->flib_def.get();
   popts.control_flow_added = false;
 
@@ -2905,12 +2916,8 @@ Status MasterSession::BuildAndRegisterPartitions(ReffedClientGraph* rcg) {
   };
 
   popts.get_incarnation = [this](const string& name) -> int64 {
-    Device* d = devices_->FindDeviceByName(name);
-    if (d == nullptr) {
-      return PartitionOptions::kIllegalIncarnation;
-    } else {
-      return d->attributes().incarnation();
-    }
+    auto d = devices_->FindDeviceByName(name);
+    return d->attributes().incarnation();
   };
 
   TF_RETURN_IF_ERROR(rcg->RegisterPartitions(popts));
@@ -2919,7 +2926,7 @@ Status MasterSession::BuildAndRegisterPartitions(ReffedClientGraph* rcg) {
 \end{c++}
 \end{leftbar}
 
-\subsubsection{ReffedClientGraph：图分裂}
+\subsubsection{ReffedClientGraph::RegisterPartitions}
 
 \begin{leftbar}
 \begin{c++}
@@ -2952,6 +2959,32 @@ Status ReffedClientGraph::RegisterPartitions(
 }
 \end{c++}
 \end{leftbar}
+
+\subsection{图分裂：SplitByWorker}
+
+\subsubsection{ReffedClientGraph::DoBuildPartitions}
+
+\begin{leftbar}
+\begin{c++}
+Status MasterSession::ReffedClientGraph::DoBuildPartitions(
+    PartitionOptions popts,
+    std::unordered_map<string, GraphDef>* out_partitions) {
+  // split full graph by worker name.
+  return Partition(popts, &client_graph_->graph, out_partitions);
+}
+\end{c++}
+\end{leftbar}
+
+\subsection{注册图}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/dist-run-step-stage-2.png}
+\caption{RegisterGraph}
+ \label{fig:dist-run-step-stage-2}
+\end{figure}
+
+\subsubsection{ReffedClientGraph::DoRegisterPartitions}
 
 \begin{leftbar}
 \begin{c++}
@@ -3005,7 +3038,7 @@ Status ReffedClientGraph::DoRegisterPartitions(
 \end{c++}
 \end{leftbar}
 
-\subsubsection{GrpcRemoteWorker}
+\subsubsection{GrpcRemoteWorker::RegisterGraphAsync}
 
 \begin{leftbar}
 \begin{c++}
@@ -3026,7 +3059,7 @@ class GrpcRemoteWorker : public WorkerInterface {
 \end{c++}
 \end{leftbar}
 
-\subsubsection{GrpcRemoteWorker}
+\subsubsection{GrpcWorkerService::RegisterGraphHandler}
 
 \begin{leftbar}
 \begin{c++}
@@ -3043,37 +3076,43 @@ class GrpcWorkerService : public AsyncServiceInterface {
 \end{c++}
 \end{leftbar}
 
-\subsubsection{Worker}
+\subsubsection{Worker::RegisterGraphAsync}
 
 \begin{leftbar}
 \begin{c++}
-void Worker::RegisterGraphAsync(const RegisterGraphRequest* request,
-                                RegisterGraphResponse* response,
-                                StatusCallback done) {
-  WorkerSession* session =
-      env_->session_mgr->WorkerSessionForSession(request->session_handle());
+void Worker::RegisterGraphAsync(
+    const RegisterGraphRequest* request,
+    RegisterGraphResponse* response,
+    StatusCallback done) {
+  auto session = FindWorkerSession(request);
   Status s = session->graph_mgr->Register(
-      request->session_handle(), request->graph_def(), request->graph_options(),
-      request->debug_options(), response->mutable_graph_handle());
+      request->session_handle(), 
+      request->graph_def(), 
+      request->graph_options(),
+      response->mutable_graph_handle());
   done(s);
 }
 \end{c++}
 \end{leftbar}
 
-\subsubsection{GraphMgr}
+\subsubsection{GraphMgr::Register}
 
 \begin{leftbar}
 \begin{c++}
-Status GraphMgr::Register(const string& session, const GraphDef& gdef,
-                          const GraphOptions& graph_options,
-                          const DebugOptions& debug_options, string* handle) {
+Status GraphMgr::Register(
+    const string& session, 
+    const GraphDef& gdef,
+    const GraphOptions& graph_options,
+    string* handle) {
   Item* item = new Item;
-  Status s = InitItem(session, gdef, graph_options, debug_options, item);
+  Status s = InitItem(session, gdef, graph_options, item);
   if (!s.ok()) {
     item->Unref();
     return s;
   }
 
+  // Generate unique graph\_handle, 
+  // and register [graph\_handle, graph\_def] to table.
   {
     mutex_lock l(mu_);
     *handle = strings::Printf("%016llx", ++next_id_);
@@ -3084,6 +3123,456 @@ Status GraphMgr::Register(const string& session, const GraphDef& gdef,
 }
 \end{c++}
 \end{leftbar}
+
+\subsection{图分裂：SplitByDevice}
+
+\begin{leftbar}
+\begin{c++}
+Status GraphMgr::InitItem(
+    const string& session, const GraphDef& gdef,
+    const GraphOptions& graph_options,
+    Item* item) {
+  item->session = session;
+  item->lib_def.reset(
+      new FunctionLibraryDefinition(OpRegistry::Global(), gdef.library()));
+
+  item->proc_flr.reset(new ProcessFunctionLibraryRuntime(
+      device_mgr_, worker_env_->env, gdef.versions().producer(),
+      item->lib_def.get(), graph_options.optimizer_options()));
+
+  // 1. Constructs the full graph out of "gdef"
+  Graph graph(OpRegistry::Global());
+  GraphConstructorOptions opts;
+  opts.allow_internal_ops = true;
+  opts.expect_device_spec = true;
+  TF_RETURN_IF_ERROR(ConvertGraphDefToGraph(opts, gdef, &graph));
+
+  // 2. Splits "graph" into multiple subgraphs by device names.
+  std::unordered_map<string, GraphDef> partitions;
+  PartitionOptions popts;
+  popts.node_to_loc = SplitByDevice;  // IMPORTANT.
+  popts.new_name = [this](const string& prefix) {
+    mutex_lock l(mu_);
+    return strings::StrCat(prefix, "_G", next_id_++);
+  };
+  popts.get_incarnation = [this](const string& name) -> int64 {
+    Device* device = nullptr;
+    Status s = device_mgr_->LookupDevice(name, &device);
+    if (s.ok()) {
+      return device->attributes().incarnation();
+    } else {
+      return PartitionOptions::kIllegalIncarnation;
+    }
+  };
+  popts.flib_def = &graph.flib_def();
+  popts.control_flow_added = true;
+  popts.scheduling_for_recvs = graph_options.enable_recv_scheduling();
+  
+  // IMPORTANT.  
+  TF_RETURN_IF_ERROR(Partition(popts, &graph, &partitions));
+
+  // 3. convert GraphDef partitions to Graph partitions.
+  std::unordered_map<string, std::unique_ptr<Graph>> partition_graphs;
+  for (const auto& partition : partitions) {
+    std::unique_ptr<Graph> device_graph(new Graph(OpRegistry::Global()));
+    GraphConstructorOptions device_opts;
+    // There are internal operations (e.g., send/recv) that we now allow.
+    device_opts.allow_internal_ops = true;
+    device_opts.expect_device_spec = true;
+    TF_RETURN_IF_ERROR(ConvertGraphDefToGraph(device_opts, partition.second,
+                                              device_graph.get()));
+    partition_graphs.emplace(partition.first, std::move(device_graph));
+  }
+
+  // 4. Build executors\_and\_partitions(item->units) = [(e0, p0), 
+  // (e1, p1), ...], and (e\_n, p\_n) is called ExecutionUnit.
+  LocalExecutorParams params;
+  item->units.reserve(partitions.size());
+  item->graph_mgr = this;
+
+  for (auto& p : partition_graphs) {
+    const string& device_name = p.first;
+    std::unique_ptr<Graph>& subgraph = p.second;
+    item->units.resize(item->units.size() + 1);
+    ExecutionUnit* unit = &(item->units.back());
+
+    // Construct the root executor for the subgraph.
+    params.device = unit->device;
+    params.function_library = lib;
+    params.create_kernel = [session, lib, opseg](
+        const NodeDef& ndef, OpKernel** kernel) {
+      // Caches the kernel only if the node is stateful.
+      if (!lib->IsStateful(ndef.op())) {
+        return lib->CreateKernel(ndef, kernel);
+      }
+      auto create_fn = [lib, &ndef](OpKernel** kernel) {
+        return lib->CreateKernel(ndef, kernel);
+      };
+      // Kernels created for subgraph nodes need to be cached.  On
+      // cache miss, create\_fn() is invoked to create a kernel based
+      // on the function library here + global op registry.
+      return opseg->FindOrCreate(session, ndef.name(), kernel, create_fn);
+    };
+
+    params.delete_kernel = [lib](OpKernel* kernel) {
+      // If the node is stateful, opseg owns it. Otherwise, delete it.
+      if (kernel && !lib->IsStateful(kernel->type_string())) {
+        delete kernel;
+      }
+    };
+
+    unit->graph = subgraph.get();
+    TF_RETURN_IF_ERROR(
+        NewLocalExecutor(params, subgraph.release(), &unit->root));
+  }
+  return Status::OK();
+}
+\end{c++}
+\end{leftbar}
+
+\subsection{运行图}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/dist-run-step-stage-3.png}
+\caption{RunGraph}
+ \label{fig:dist-run-step-stage-3}
+\end{figure}
+
+\subsubsection{ReffedClientGraph::RunPartitions}
+
+\begin{leftbar}
+\begin{c++}
+Status MasterSession::ReffedClientGraph::RunPartitions(
+    const MasterEnv* env, int64 step_id, int64 execution_count,
+    PerStepState* pss, CallOptions* call_opts, const RunStepRequestWrapper& req,
+    MutableRunStepResponseWrapper* resp, CancellationManager* cm,
+    const bool is_last_partial_run) {
+
+
+  // 1. Prepares a number of calls to workers. 
+  //    One call per partition.
+  const int num = partitions_.size();
+  RunManyGraphs calls(num);
+
+  for (int i = 0; i < num; ++i) {
+    const Part& part = partitions_[i];
+    RunManyGraphs::Call* c = calls.get(i);
+    c->req.reset(part.worker->CreateRunGraphRequest());
+    c->resp.reset(part.worker->CreateRunGraphResponse());
+    if (is_partial_) {
+      c->req->set_is_partial(is_partial_);
+      c->req->set_is_last_partial_run(is_last_partial_run);
+    }
+    c->req->set_session_handle(session_handle_);
+    c->req->set_graph_handle(part.graph_handle);
+    c->req->set_step_id(step_id);
+    
+    for (const auto& feed_key : part.feed_key) {
+      const string& feed = feed_key.first;
+      const string& key = feed_key.second;
+      const int64 feed_index = feeds[feed];
+      TF_RETURN_IF_ERROR(
+          c->req->AddSendFromRunStepRequest(req, feed_index, key));
+    }
+
+    for (const auto& key_fetch : part.key_fetch) {
+      const string& key = key_fetch.first;
+      c->req->add_recv_key(key);
+    }
+  }
+
+  // 2. Issues RunGraph calls.
+  for (int i = 0; i < num; ++i) {
+    const Part& part = partitions_[i];
+    RunManyGraphs::Call* call = calls.get(i);
+    part.worker->RunGraphAsync(
+        &call->opts, call->req.get(), call->resp.get(),
+        std::bind(&RunManyGraphs::WhenDone, &calls, i, std::placeholders::_1));
+  }
+
+  // 3. Waits for the RunGraph calls.
+  call_opts->SetCancelCallback([&calls]() { calls.StartCancel(); });
+  auto token = cm->get_cancellation_token();
+  bool success =
+      cm->RegisterCallback(token, [&calls]() { calls.StartCancel(); });
+  if (!success) {
+    calls.StartCancel();
+  }
+
+  calls.Wait();
+
+  call_opts->ClearCancelCallback();
+  if (success) {
+    cm->DeregisterCallback(token);
+  } else {
+    return errors::Cancelled("Step was cancelled");
+  }
+
+  // 4. Collects fetches.
+  Status status = calls.status();
+  if (status.ok()) {
+    for (int i = 0; i < num; ++i) {
+      const Part& part = partitions_[i];
+      MutableRunGraphResponseWrapper* run_graph_resp = calls.get(i)->resp.get();
+      for (size_t j = 0; j < run_graph_resp->num_recvs(); ++j) {
+        auto iter = part.key_fetch.find(run_graph_resp->recv_key(j));
+        if (iter == part.key_fetch.end()) {
+          status.Update(errors::Internal("Unexpected fetch key: ",
+                                         run_graph_resp->recv_key(j)));
+          break;
+        }
+        const string& fetch = iter->second;
+        status.Update(
+            resp->AddTensorFromRunGraphResponse(fetch, run_graph_resp, j));
+        if (!status.ok()) {
+          break;
+        }
+      }
+    }
+  }
+  return status;
+}
+\end{c++}
+\end{leftbar}
+
+\subsubsection{GrpcRemoteWorker::RunGraphAsync}
+
+\begin{leftbar}
+\begin{c++}
+struct GrpcRemoteWorker : public WorkerInterface {
+  void RunGraphAsync(
+      CallOptions* call_opts, 
+      RunGraphRequestWrapper* request,
+      MutableRunGraphResponseWrapper* response,
+      StatusCallback done) override {
+    IssueRequest(&request->ToProto(), 
+        get_proto_from_wrapper(response),
+        rungraph_, std::move(done), call_opts);
+  }
+};
+\end{c++}
+\end{leftbar}
+
+
+\subsubsection{GrpcWorkerService::RunGraphHandler}
+
+\begin{leftbar}
+\begin{c++}
+struct GrpcWorkerService : AsyncServiceInterface {
+  void RunGraphHandler(WorkerCall<RunGraphRequest, RunGraphResponse>* call) {
+    Schedule([this, call]() {
+      auto wrapped_req = new ProtoRunGraphRequest(&call->request);
+      auto wrapped_rsp = new NonOwnedProtoRunGraphResponse(&call->response);
+      
+      auto call_opts = new CallOptions;
+      call->SetCancelCallback([call_opts]() { 
+          call_opts->StartCancel(); 
+      });
+
+      worker_->RunGraphAsync(call_opts, wrapped_req, wrapped_rsp, 
+        [call, call_opts, wrapped_req, wrapped_rsp](const Status& s) {
+            call->ClearCancelCallback();
+            delete call_opts;
+            delete wrapped_req;
+            delete wrapped_rsp;
+            call->SendResponse(ToGrpcStatus(s));
+        });
+    });
+    ENQUEUE_REQUEST(RunGraph, true);
+  }
+};
+\end{c++}
+\end{leftbar}
+
+\subsubsection{Worker::RunGraphAsync}
+
+\begin{leftbar}
+\begin{c++}
+void Worker::RunGraphAsync(
+    CallOptions* opts, 
+    RunGraphRequestWrapper* request,
+    MutableRunGraphResponseWrapper* response,
+    StatusCallback done) {
+  if (request->is_partial()) {
+    DoPartialRunGraph(opts, request, response, std::move(done));
+  } else {
+    DoRunGraph(opts, request, response, std::move(done));
+  }
+}
+\end{c++}
+\end{leftbar}
+
+\begin{leftbar}
+\begin{c++}
+void Worker::DoRunGraph(
+    CallOptions* opts, 
+    RunGraphRequestWrapper* request,
+    MutableRunGraphResponseWrapper* response,
+    StatusCallback done) {
+  const int64 step_id = request->step_id();
+
+  // 1. Prepare inputs and outputs.
+  GraphMgr::NamedTensors in;
+  GraphMgr::NamedTensors* out = new GraphMgr::NamedTensors;
+  Status s = PrepareRunGraph(request, &in, out);
+  if (!s.ok()) {
+    delete out;
+    done(s);
+    return;
+  }
+  
+  // 2. Register Cancellation callback.
+  CancellationManager* cm = new CancellationManager;
+  opts->SetCancelCallback([this, cm, step_id]() {
+    cm->StartCancel();
+    AbortStep(step_id);
+  });
+
+  CancellationToken token;
+  {
+    mutex_lock l(mu_);
+    token = cancellation_manager_->get_cancellation_token();
+    bool already_cancelled = !cancellation_manager_->RegisterCallback(
+        token, [cm]() { cm->StartCancel(); });
+    if (already_cancelled) {
+      opts->ClearCancelCallback();
+      delete cm;
+      delete out;
+      done(errors::Aborted("Call was aborted"));
+      return;
+    }
+  }
+
+  // 3. Start Execution.
+  auto session =
+      FindWorkerSession(request);
+
+  session->graph_mgr->ExecuteAsync(
+      request->graph_handle(), step_id, session, 
+      request->exec_opts(), response, cm, in,
+      [ this, step_id, response, session, cm, 
+        out, token, opts, done](Status s) {
+        
+        // 4. Receive output tensors from grpc remote rendezvous.
+        if (s.ok()) {
+          s = session->graph_mgr->RecvOutputs(step_id, out);
+        }
+
+        // 5. Unregister Cancellation callback
+        opts->ClearCancelCallback();
+        {
+          mutex_lock l(mu_);
+          cancellation_manager_->DeregisterCallback(token);
+        }
+        delete cm;
+
+        // 6. Save to RunStepResponse.
+        if (s.ok()) {
+          for (const auto& p : *out) {
+            const string& key = p.first;
+            const Tensor& val = p.second;
+            response->AddRecv(key, val);
+          }
+        }
+        delete out;
+        done(s);
+      });
+}
+\end{c++}
+\end{leftbar}
+
+\subsubsection{GraphMgr}
+
+\begin{leftbar}
+\begin{c++}
+void GraphMgr::ExecuteAsync(
+    const string& handle, const int64 step_id,
+    WorkerSession* session, const ExecutorOpts& opts,
+    MutableRunGraphResponseWrapper* response,
+    CancellationManager* cancellation_manager,
+    const NamedTensors& in, StatusCallback done) {
+  // 1. Lookup an item. Holds one ref while executing.
+  Item* item = nullptr;
+  {
+    mutex_lock l(mu_);
+    auto iter = table_.find(handle);
+    if (iter != table_.end()) {
+      item = iter->second;
+      item->Ref();
+    }
+  }
+
+  if (item == nullptr) {
+    done(errors::Aborted("Graph handle is not found: ", handle));
+    return;
+  }
+
+  RemoteRendezvous* rendezvous = worker_env_->rendezvous_mgr->Find(step_id);
+  Status s = rendezvous->Initialize(session);
+
+  // 2. Sends inputs to rendezvous.
+  if (s.ok()) {
+    s = SendInputsToRendezvous(rendezvous, in);
+  }
+
+  // 3. Start parallel executors.
+  StartParallelExecutors(
+      handle, step_id, item, rendezvous, collector,
+      cost_graph, cancellation_manager,
+      [this, item, rendezvous, done](const Status& s) {
+          done(s);
+          rendezvous->Unref();
+          item->Unref();
+      });
+}
+\end{c++}
+\end{leftbar}
+
+\begin{leftbar}
+\begin{c++}
+void GraphMgr::StartParallelExecutors(
+    const string& handle, int64 step_id,
+    Item* item, Rendezvous* rendezvous,
+    StepStatsCollector* collector,
+    CancellationManager* cancellation_manager,
+    StatusCallback done) {
+  
+  // 1. Wait until pending == 0, with default is num\_units. 
+  const int num_units = item->units.size();
+  ExecutorBarrier* barrier =
+      new ExecutorBarrier(
+          num_units, rendezvous, [done](const Status& s) {
+              done(s);
+          });
+
+  Executor::Args args;
+  {
+    mutex_lock l(mu_);
+    args.step_id = ++next_id_;
+  }
+  args.rendezvous = rendezvous;
+  args.cancellation_manager = cancellation_manager;
+  args.stats_collector = collector;
+  args.step_container = step_container;
+  args.sync_on_finish = sync_on_finish_;
+
+  thread::ThreadPool* pool = worker_env_->compute_pool;
+
+  using std::placeholders::_1;
+  args.runner = std::bind(
+      &thread::ThreadPool::Schedule, 
+      worker_env_->compute_pool, _1);
+
+  2. Broadcast all partitions to run
+  for (const auto& unit : item->units) {
+    unit.root->RunAsync(args, barrier->Get());
+  }
+}
+\end{c++}
+\end{leftbar}
+
+\subsection{注销图}
 
 \end{content}
 
