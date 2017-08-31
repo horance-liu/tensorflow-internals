@@ -9,7 +9,7 @@
 %% CJKnormalspaces: 仅忽略汉字之间的空白,但保留中英文之间的空白。 
 %% CJKchecksingle: 避免单个汉字单独占一行。
 \usepackage[slantfont, boldfont]{xeCJK} 
-\usepackage{ctex}
+% \usepackage{ctex}
 
 %% 针对中文进行断行
 \XeTeXlinebreaklocale "zh"             
@@ -103,7 +103,7 @@
 \usepackage{titlesec}
 
 \renewcommand{\partname}{}
-\renewcommand{\thepart}{第\chinese{part}部分}
+\renewcommand{\thepart}{第\Roman{part}部分}
 
 %% 章节等名称重定义
 \renewcommand{\contentsname}{目录}
