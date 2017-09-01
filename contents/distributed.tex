@@ -73,6 +73,67 @@
  \label{fig:dist-exp-2}
 \end{figure}
 
+\subsection{形式化}
+
+在真实的系统实现中，分布式的运行时使用\ascii{C++}实现。其中，\tf{}运行时的关键路径为\code{run\_step}。因为真实系统实现中涉及过多的细节，不易发现算法的主干和逻辑。为了简化问题的描述，将形式化地描述\code{run\_step}的实现过程。
+
+\subsubsection{Master::RunStep}
+
+在\ascii{Master}上，主要完成\code{FullGraph}的剪枝操作，生成\code{ClientGraph}；然后，按照\ascii{Worker}将\code{ClientGraph}分裂为多个\code{PartitionGraph}；最后，将\code{PartitionGraph}列表注册给各个\ascii{Worker}，并启动各个\ascii{Worker}并发执行\code{PartitionGraph}列表。
+
+\begin{leftbar}
+\begin{python}
+def run_step(workers, full_graph, inputs, outputs):
+  client_graph = prune(full_graph, inputs, outputs)
+  partition_graphs = split(client_graph, workers)
+  register_graphs(partition_graphs, inputs, outputs)
+  run_graphs(partition_graphs, inputs, outputs)
+\end{python}
+\end{leftbar}
+
+\subsubsection{Worker::RunStep}
+
+在某个特定的\ascii{Worker}节点上，当收到\code{RegisterGraphRequest}消息后，将计算图按照本地设备集分裂为多个\code{PartitionGraph}。然后，在每个计算设备启动一个\code{Executor}，以便执行分配给它的\code{PartitionGraph}。
+
+当某一个计算设备执行完所分配的\code{PartitionGraph}之后，\code{ExecutorBarrier}的计数器加\ascii{1}，直至所有设备完成\code{PartitionGraph}列表的执行，\code{barrier.wait()}阻塞操作退出。
+
+跨设备的\code{PartitionGraph}之间可能存在数据依赖关系，它们之间通过插入\code{Send/Recv}节点完成交互。事实上，在分布式运行时，\code{Send/Recv}通过\code{RpcRemoteRendezvous}完成数据交换的。
+
+% \code{Send}节点将调用\code{RpcRemoteRendezvous::Send}，它委托\code{LocalRendezvous}数据放在本地。而\code{Recv}节点则根据标识调用\code{RpcRemoteRendezvous::Recv}获取数据。此时，可能存在两种情况。
+
+% \begin{enum}
+%   \eitem{原设备与目标设备在同一个\ascii{Worker}中：\code{RpcRemoteRendezvous::Recv}将委托\code{LocalRendezvous::Recv}从本地直接获取；}
+%   \eitem{原设备与目标设备不在同一个\ascii{worker}中：\code{RpcRemoteRendezvous::Recv}向目标设备所在的\ascii{Worker}发送\code{RecvTensorRequest}请求；目标\ascii{Worker}将通过\code{LocalRendezvous::Recv}从本地获取数据，并返回\code{RecvTensorResponse}消息给对端。}
+% \end{enum}
+
+\begin{leftbar}
+\begin{python}
+def send_inputs(remote_rendezvous, inputs):
+  for (key, tensor) in inputs:
+    remote_rendezvous.send(key, tensor)
+
+def do_run_partitions(executors_and_partitions):
+  barrier = ExecutorBarrier(executors_and_partitions.size())
+  for (executor, partition) in executors_and_partitions:
+    executor.run(partition, barrier.on_done())  
+  barrier.wait()
+
+def recv_outputs(remote_rendezvous, outputs):
+  for (key, tensor) in outputs:
+    remote_rendezvous.recv(key, tensor)
+
+def run_partitions(executors_and_partitions, inputs, outputs):
+  remote_rendezvous = RpcRemoteRendezvous()
+  send_inputs(remote_rendezvous, inputs)
+  do_run_partitions(executors_and_partitions)
+  recv_outputs(remote_rendezvous, outputs)
+
+def run_step(devices, full_graph, inputs, outputs):
+  executors_and_partitions = split(full_graph, devices)
+  run_partitions(executors_and_partitions, inputs, outputs)
+\end{python}
+\end{leftbar}
+
 \subsection{领域模型}
 
 如\refig{cc-dist-model}所示，在\tf{}分布式运行时，存在一个精巧的领域模型。
@@ -3484,6 +3545,13 @@ void Worker::DoRunGraph(
 
 \subsubsection{GraphMgr}
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=1.0\textwidth]{figures/dist-run-step-overview.png}
+\caption{Worker: RunStep形式化}
+ \label{fig:dist-run-step-overview}
+\end{figure}
+
 \begin{leftbar}
 \begin{c++}
 void GraphMgr::ExecuteAsync(
@@ -3493,6 +3561,7 @@ void GraphMgr::ExecuteAsync(
     CancellationManager* cancellation_manager,
     const NamedTensors& in, StatusCallback done) {
   // 1. Lookup an item. Holds one ref while executing.
+  //    One item per registered graph.
   Item* item = nullptr;
   {
     mutex_lock l(mu_);
@@ -3501,11 +3570,6 @@ void GraphMgr::ExecuteAsync(
       item = iter->second;
       item->Ref();
     }
-  }
-
-  if (item == nullptr) {
-    done(errors::Aborted("Graph handle is not found: ", handle));
-    return;
   }
 
   RemoteRendezvous* rendezvous = worker_env_->rendezvous_mgr->Find(step_id);
@@ -3521,10 +3585,33 @@ void GraphMgr::ExecuteAsync(
       handle, step_id, item, rendezvous, collector,
       cost_graph, cancellation_manager,
       [this, item, rendezvous, done](const Status& s) {
+          // 4. Recvs outputs from rendezvous.
           done(s);
           rendezvous->Unref();
           item->Unref();
       });
+}
+\end{c++}
+\end{leftbar}
+
+\begin{leftbar}
+\begin{c++}
+Status GraphMgr::SendInputsToRendezvous(
+    Rendezvous* rendezvous, const NamedTensors& in) {
+  Rendezvous::ParsedKey parsed;
+  for (auto& p : in) {
+    auto& key = p.first;
+    auto& val = p.second;
+
+    Status s = Rendezvous::ParseKey(key, &parsed);
+    if (s.ok()) {
+      s = rendezvous->Send(parsed, Rendezvous::Args(), val, false);
+    }
+    if (!s.ok()) {
+      return s;
+    }
+  }
+  return Status::OK();
 }
 \end{c++}
 \end{leftbar}
@@ -3538,8 +3625,9 @@ void GraphMgr::StartParallelExecutors(
     CancellationManager* cancellation_manager,
     StatusCallback done) {
   
-  // 1. Wait until pending == 0, with default is num\_units. 
-  const int num_units = item->units.size();
+  // 1. Wait until pending == 0, with default is num\_units,
+  // `pending -= 1` when one partition graph is done. 
+  int num_units = item->units.size();
   ExecutorBarrier* barrier =
       new ExecutorBarrier(
           num_units, rendezvous, [done](const Status& s) {
@@ -3557,8 +3645,6 @@ void GraphMgr::StartParallelExecutors(
   args.step_container = step_container;
   args.sync_on_finish = sync_on_finish_;
 
-  thread::ThreadPool* pool = worker_env_->compute_pool;
-
   using std::placeholders::_1;
   args.runner = std::bind(
       &thread::ThreadPool::Schedule, 
@@ -3571,6 +3657,86 @@ void GraphMgr::StartParallelExecutors(
 }
 \end{c++}
 \end{leftbar}
+
+\begin{leftbar}
+\begin{c++}
+Status GraphMgr::RecvOutputsFromRendezvous(
+    Rendezvous* rendezvous, NamedTensors* out) {
+  // Receives values requested by the caller.
+  Rendezvous::ParsedKey parsed;
+  for (auto& p : *out) {
+    auto& key = p.first;
+    auto& val = p.second;
+
+    bool is_dead = false;
+    Status s = Rendezvous::ParseKey(key, &parsed);
+    if (s.ok()) {
+      s = rendezvous->Recv(parsed, Rendezvous::Args(), &val, &is_dead);
+    }
+
+    if (is_dead) {
+      s = errors::InvalidArgument("The tensor returned for ", key,
+                                  " was not valid.");
+    }
+
+    if (!s.ok()) {
+      return s;
+    }
+  }
+  return Status::OK();
+}
+
+Status GraphMgr::RecvOutputs(int64 step_id, NamedTensors* out) {
+  Rendezvous* rendezvous = worker_env_->rendezvous_mgr->Find(step_id);
+  Status s = RecvOutputsFromRendezvous(rendezvous, out);
+  rendezvous->Unref();
+  return s;
+}
+\end{c++}
+\end{leftbar}
+
+\subsection{Rendzvous}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/rendezvous-hierarchy.png}
+\caption{Rendezvous层次结构}
+ \label{fig:rendezvous-hierarchy}
+\end{figure}
+
+\subsubsection{多态创建}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/rendezvous-remote-mgr.png}
+\caption{RemoteRendezvous多态创建}
+ \label{fig:rendezvous-remote-mgr}
+\end{figure}
+
+\subsubsection{发送}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/rendzvous-send.png}
+\caption{Rendezvous发送}
+ \label{fig:rendzvous-send}
+\end{figure}
+
+\subsubsection{接收}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/rendezvous-recv-case-1.png}
+\caption{Rendezvous接收：分布式发送端与接收端在同一个Worker内}
+ \label{fig:rendezvous-recv-case-1}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.4\textwidth]{figures/rendezvous-recv-case-2.png}
+\caption{Rendezvous接收：分布式发送端与接收端不在同一个Worker内}
+ \label{fig:rendezvous-recv-case-2}
+\end{figure}
 
 \subsection{注销图}
 
