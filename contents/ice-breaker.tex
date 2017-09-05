@@ -8,11 +8,11 @@
 
 \begin{content}
 
-在开始探究\tf{}内核之前，亲自动手实践模型的训练，熟悉模型训练的基本方法和调优技术，对于理解后续章节的内容将大有裨益。\footnote{ 本章内容摘自\ascii{Martin G\"{o}rner}在\ascii{Codelabs}上发表的文章：\href{https://codelabs.developers.google.com/codelabs/cloud-tensorflow-mnist}{Tensorflow and deep learning, without a PhD}，经由\ascii{Martin G\"{o}rner}同意，授权该文章在本书中发表。}
+在开始探究\tf{}内核之前，亲自动手实践模型的训练，熟悉模型训练的基本方法和调优技术，对于理解后续章节的内容将大有裨益。通过本文学习和实践，将了解到如何构建并训练出能够识别手写数字的神经网络\footnote{ 本章内容摘自\ascii{Martin G\"{o}rner}在\ascii{Codelabs}上发表的文章：\href{https://codelabs.developers.google.com/codelabs/cloud-tensorflow-mnist}{Tensorflow and deep learning, without a PhD}，经由\ascii{Martin G\"{o}rner}同意，授权该文章在本书中发表。}。
 
-通过本文学习和实践，将了解到如何构建并训练出能够识别手写数字的神经网络。首先，尝试使用单层感知器模型，然后尝试使用多层感知器模型，最后尝试使用卷积神经网络。并在训练过程中，介绍了算法调优的一些常用技术，包括选择更好的激活函数，学习速率衰减，实施\ascii{Dropout}技术等；最终，将模型的准确率提升至\ascii{99％}以上。
+在开始时，尝试使用单层感知器模型，进而尝试使用多层感知器模型，最后尝试使用卷积神经网络。并在训练过程中，介绍了算法调优的一些常用技术，包括选择更好的激活函数，应用学习速率衰减的技术，实施\ascii{Dropout}技术等。最终，将模型的准确率提升至\ascii{99％}以上。
 
-在介绍每一种网络模型之前，将简单给出该模型的算法理论知识，帮助大家更好地理解程序的内容。但是，本书不是专业介绍算法的书籍，如需了解更多相关算法内容，请查阅相关文献或论文。
+在介绍每一种网络模型之前，将简单给出该模型的算法理论知识，帮助大家更好地理解程序的内容。但是，本书不是介绍机器学习算法的专业书籍，如需了解更多相关算法内容，请查阅相关文献和论文。
 
 \end{content}
 
@@ -20,9 +20,7 @@
 
 \begin{content}
 
-本章使用\ascii{MNIST}数据集完成手写数字的网络模型训练，它包含了\ascii{60000}个训练样本数据；其中，包括\ascii{10000}个测试样本数据。
-
-如\refig{mnist-x}所示，对于任意一个样本数据$x$，使用$28 \times 28$像素的数字矩阵表示。为了简化，将$28 \times 28$的矩阵实施扁平化处理，得到长度为\ascii{784}的一维向量。
+本章使用\ascii{MNIST}数据集完成手写数字的网络模型训练，它包含了\ascii{60000}个训练样本数据；其中，包括\ascii{10000}个测试样本数据。如\refig{mnist-x}所示，对于任意一个样本数据$x$，使用$28 \times 28$像素的数字矩阵表示。为了简化，将$28 \times 28$的矩阵实施扁平化处理，得到长度为\ascii{784}的一维向量。
 
 \begin{figure}[H]
 \centering
@@ -30,6 +28,8 @@
 \caption{MNIST样本数据表示}
  \label{fig:mnist-x}
 \end{figure}
+
+\subsection{样本数据集}
 
 因此，在\ascii{MNIST}训练数据集中，\code{mnist.train.images}是一个\code{[60000, 784]}的二维矩阵。其中，矩阵中每一个元素，表示图片中某个像素的强度值，其值介于\ascii{0}和\ascii{1}之间。如\refig{mnist-train-xs}所示。
 
@@ -49,15 +49,17 @@
  \label{fig:mnist-train-ys}
 \end{figure}
 
-\end{content}
-
-\section{图示说明}
+\subsection{图示说明}
 
 \begin{content}
 
-为了更好地可视化整个训练过程，使用\ascii{matplotlib}工具包绘制了\ascii{5}种类型的画板。如\refig{mnist-training-digits}所示，表示\code{batch\_size = 100}时，一个\ascii{mini-batch}的训练样本数据集。其中，白色背景表示数字被正确识别；而红色背景表示数字被误分类，手写数字的左侧标识了正确的标签值，而右侧标识了错误的预测值。
+为了更好地可视化整个训练过程，使用\ascii{matplotlib}工具包绘制了\ascii{5}种类型的画板。如\refig{mnist-training-digits}所示，表示一个\ascii{mini-batch}的训练样本数据集。其中，\code{batch\_size = 100}，白色背景表示数字被正确识别；而红色背景表示数字被误分类，手写数字的左侧标识了正确的标签值，而右侧标识了错误的预测值。
 
 \ascii{MNIST}拥有\ascii{50000}个训练样本，如果\code{batch\_size}为\ascii{100}，则需要迭代\ascii{500}次才能完整地遍历一次训练样本数据集，常称为一个\ascii{epoch}周期。
+
+\begin{remark}
+本章示例代码未使用\ascii{TensorBoard}，而是用了\ascii{matplotlib}，在训练时可以实时观察误差和精度的曲线变化。
+\end{remark}
 
 \begin{figure}[H]
 \centering
@@ -84,7 +86,7 @@
  \label{fig:mnist-cross-entropy-loss-fig}
 \end{figure}
 
-如\refig{mnist-accuracy-fig}所示，可以实时计算得到模型在当前训练数据集和测试集上的精度。其中，\ascii{x}轴表示迭代的次数，\ascii{y}轴表示精度值。另外，基于训练样本数据集，精度曲线抖动较大；而基于测试样本数据集，精度曲线抖动较小。
+如\refig{mnist-accuracy-fig}所示，可以实时计算得到模型在当前训练数据集和测试集上的精度。其中，\ascii{x}轴表示迭代的次数，\ascii{y}轴表示精度值。同理，基于训练样本数据集，精度曲线抖动较大；而基于测试样本数据集，精度曲线抖动较小。
 
 \begin{figure}[H]
 \centering
@@ -250,7 +252,7 @@ x = tf.reshape(x, [-1, 784])
 
 \subsubsection{定义变量}
 
-然后，使用\code{tf.Variable}定义模型参数。定义训练参数时，必须指定参数的初始化值；训练变量将根据初始化值，自动推演数据的类型，及其大小。
+然后，使用\code{tf.Variable}定义模型参数。定义训练参数时，必须指定参数的初始化值；训练参数将根据初始值，自动推演数据的类型，及其大小。
 
 \begin{leftbar}
 \begin{python}
@@ -318,7 +320,7 @@ cross_entropy = -tf.reduce_sum(t * tf.log(y))
 
 \subsubsection{精度}
 
-\code{tf.argmax(y,1)}将按第\ascii{1}个维度计算最大值的索引。既按照${{\text{y}}_{{\text{100}} \times {\text{10}}}}$的每一行，计算得到在每一行中最大值的的索引值。因此，\code{tf.argmax(y,1)}将得到大小为\code{[100, 1]}的矩阵，或大小为\ascii{100}的向量。同样地，\code{tf.argmax(t,1)}也是一个大小为\ascii{100}的向量。
+\code{tf.argmax(y,1)}将按第\ascii{1}个维度计算最大值的索引。既按照$ y_{100 \times 10} $的每一行，计算得到在每一行中最大值的的索引值。因此，\code{tf.argmax(y,1)}将得到大小为\code{[100, 1]}的矩阵，或大小为\ascii{100}的向量。同样地，\code{tf.argmax(t,1)}也是一个大小为\ascii{100}的向量。
 
 然后，使用\code{tf.equal}将它们逐元素(\ascii{element-wise})进行相等性比较，得到大小为\ascii{100}的布尔向量。为了计算精度，先将布尔向量转别为数值向量，最终求取该数值向量的均值。
 
@@ -719,7 +721,7 @@ with tf.Session() as sess:
 
 \subsubsection{局部连接}
 
-相对于全连接网络，卷积网络实现了局部连接，即每个神经元并不与上一层的神经元都存在连接。如\refig{mnist-conv-local-conn}左侧所示，假如存在一张$ 1000 \times 1000 $像素的图像，及其$ 10^6 $个隐藏层的神经元。在全连接网络里，将拥有$ 10^3 \times 10^3 \times 10^6 = 10^12 $个训练参数。
+相对于全连接网络，卷积网络实现了局部连接，即每个神经元并不与上一层的神经元都存在连接。如\refig{mnist-conv-local-conn}左侧所示，假如存在一张$ 1000 \times 1000 $像素的图像，及其$ 10^6 $个隐藏层的神经元。在全连接网络里，将拥有$ 10^3 \times 10^3 \times 10^6 = 10^{12} $个训练参数。
 
 事实上，每个神经元没有必要与上一层神经元都存在连接。如\refig{mnist-conv-local-conn}右侧所示，假如每个隐藏层的神经元仅与上一层$ 10 \times 10 $的局部图像存在连接，$ 10^6 $个隐藏层的神经元则需要$ 10^6 \times 10^2 = 10^8$个网络连接，相比减少了\ascii{4}个数量级。
 
@@ -758,9 +760,7 @@ with tf.Session() as sess:
 
 卷积运算是一个计算密集型的\ascii{OP}。如\refig{mnist-conv2d-gif}所示，存在一个权重向量\code{w[3,3,3,2]}，其中输入通道数为\ascii{3}，输出通道数为\ascii{2}，卷积核大小为$3 \times 3$。
 
-显而易见，输入图像的通道数，等价于卷积核的深度；卷积核的数目，等于\ascii{Feature Map}的输出通道数。
-
-另外，为了采集图像的边缘特征，在原图像外围补了(\ascii{padding})一圈零值。每次卷积计算，移动的步长(\ascii{stride})为\ascii{2}。因此，最终输出的\ascii{Feature Map}大小为$3 \times 3$。
+显而易见，输入图像的通道数，等价于卷积核的深度；卷积核的数目，等于\ascii{Feature Map}的输出通道数。另外，为了采集图像的边缘特征，在原图像外围补了(\ascii{padding})一圈零值。每次卷积计算，移动的步长(\ascii{stride})为\ascii{2}。因此，最终输出的\ascii{Feature Map}大小为$3 \times 3$。
 
 \begin{figure}[H]
 \centering
@@ -771,9 +771,7 @@ with tf.Session() as sess:
 
 \subsubsection{例子}
 
-加入存在一个$32 \times 32 \times 3$的图片，卷积核大小为$5 \times 5 \times 3$。其中，卷积核的深度等于图片的输入通道数。
-
-如\refig{mnist-conv-1dot}所示，卷积核与图片中其中大小为$5 \times 5 \times 3$的块实施点积运算，得到一个值。
+假如存在一个$32 \times 32 \times 3$的图片，卷积核大小为$5 \times 5 \times 3$。其中，卷积核的深度等于图片的输入通道数。如\refig{mnist-conv-1dot}所示，卷积核与图片中大小为$5 \times 5 \times 3$的块实施点积运算，得到一个值。
 
 \begin{figure}[H]
 \centering
