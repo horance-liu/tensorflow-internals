@@ -8,13 +8,6 @@
 
 \begin{content}
 
-\ascii{TensorFlow}的系统结构以\ascii{C API}为界，将整个系统分为前端和后端两个子系统：
-
-\begin{enum}
-  \eitem{前端系统：提供编程模型，负责构造计算图；}
-  \eitem{后端系统：提供运行时环境，负责执行计算图。}
-\end{enum}
-
 本章通过客户端\ascii{Session}生命周期的实现为例，揭示前端\ascii{Python}与后端\cpp{}系统的实现通道，揭示\ascii{TensorFlow}多语言编程的奥秘。
 
 \end{content}
@@ -23,7 +16,7 @@
 
 \begin{content}
 
-前端多语言编程环境与后端\cpp{}实现系统的通道归功于\ascii{Swig}的包装器。\ascii{TensorFlow}使用\ascii{Bazel}的构建工具，在系统编译之前启动\ascii{Swig}的代码生成过程，通过\code{tf\_session.i}自动生成了两个适配(\ascii{Wrapper})文件：
+前端多语言编程环境与后端\cpp{}实现系统的通道归功于\ascii{Swig}的包装器。\ascii{TensorFlow}使用\ascii{Bazel}的构建工具，在系统编译之前启动\ascii{Swig}的代码生成过程，通过\code{tensorflow.i}自动生成了两个适配(\ascii{Wrapper})文件：
 
 \begin{enum}
   \eitem{\code{pywrap\_tensorflow.py}:  负责对接上层\ascii{Python}调用；}
@@ -32,9 +25,9 @@
 
 \code{pywrap\_tensorflow.py}模块首次被导入时，自动地加载\code{\_pywrap\_tensorflow.so}的动态链接库。从而在运行时实现了\code{pywrap\_tensorflow.py}到\code{pywrap\_tensorflow.cpp}的函数调用关系。
 
-在\code{pywrap\_tensorflow.cpp}的实现中，静态注册了一个函数符号表，实现了\ascii{Python}函数名到\ascii{C}函数名的二元关系。在运行时，按照\ascii{Python}的函数名称，匹配找到对应的\ascii{C}函数实现，最终实现到\code{c\_api.c}具体实现的调用关系。如\refig{swig}所示。
+如\refig{swig}所示，在\code{pywrap\_tensorflow.cpp}的实现中，静态注册了一个函数符号表，实现了\ascii{Python}函数名到\ascii{C}函数名的二元关系。在运行时，按照\ascii{Python}的函数名称，匹配找到对应的\ascii{C}函数实现，最终实现到\code{c\_api.c}具体实现的调用关系。
 
-\begin{figure}[!h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/swig.png}
 \caption{Swig代码生成器}}
@@ -49,16 +42,16 @@
 
 \begin{content}
 
-在上一章提及，\ascii{C API}并非是\ascii{Client}与\ascii{Master}的分界线。如\refig{tf-client-session}所示，\ascii{Client}有一部分\cpp{}实现，\code{tf.Session}实例负责\cpp{}实现的\code{tensorflow::Session}实例的创建和销毁，并且它直接持有\code{tensorflow::Session}实例的句柄。
+在上一章提及，\ascii{C API}并非是\ascii{Client}与\ascii{Master}的分界线。如\refig{tf-client-session}所示，\ascii{Client}存在部分\cpp{}实现，即\code{tensorflow::Session}。其中，\code{tf.Session}实例直接持有\code{tensorflow::Session}实例的句柄。
 
-根据运行时环境，\code{tensorflow::Session}可能存在多种实现。例如，存在\code{tensorflow::DirectSession}负责\emph{本地模式}的会话控制；而\code{tensorflow::GrpcSession}负责\emph{分布式模式}的会话控制。
+在真实运行时环境中，\code{tensorflow::Session}可能存在多种实现。例如，\code{tensorflow::DirectSession}负责\emph{本地模式}的会话控制。而\code{tensorflow::GrpcSession}负责基于\ascii{gRPC}协议的\emph{分布式模式}的会话控制。
 
-一般地，用户使用的是\code{tf.Session}，而非\code{tensorflow::Session}。因此，后者常常称为前者的代理。
+一般地，用户使用的是\code{tf.Session}编程，而非\code{tensorflow::Session}。因此，后者常常称为前者的代理实现。
 
 \begin{figure}[!h]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/tf-client-session.png}
-\caption{客户端：Session实例创建过程}}
+\caption{客户端：tensorflow::Session实例创建过程}}
  \label{fig:tf-client-session}
 \end{figure}
 

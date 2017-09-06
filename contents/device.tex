@@ -44,7 +44,7 @@ CONSTRAINT ::= ("job:" JOB_NAME)
 
 \subsubsection{部分指定}
 
-设备规范也可以部分指定，甚至为空。例如，下例仅描述了\ascii{GPU}的\ascii{0}号设备。
+设备规范也可以部分指定，甚至为空。例如，下例仅描述了\code{GPU0}号设备。
 
 \begin{leftbar}
 \begin{python}
@@ -56,7 +56,7 @@ CONSTRAINT ::= ("job:" JOB_NAME)
 
 \subsubsection{同位}
 
-使用\code{COLOCATED\_NODE}指定该\ascii{OP}与指定的节点被同时放置在特定设备上。例如：
+使用\code{COLOCATED\_NODE}指示该\ascii{OP}与指定的节点被同时放置在相同的设备上。例如，该节点与\code{other/node}放置在相同的设备上。
 
 \begin{leftbar}
 \begin{python}
@@ -66,7 +66,7 @@ CONSTRAINT ::= ("job:" JOB_NAME)
 
 \subsubsection{DeviceSpec}
 
-一个设备规范可以使用字符串，或者\code{DeviceSpec}表示。其中，\code{DeviceSpec}使用如下\ascii{5}个标识确定一个设备规范。
+一个设备规范可以使用字符串，或者\code{DeviceSpec}表示。其中，\code{DeviceSpec}是一个值对象，使用如下\ascii{5}个标识确定设备规范。
 
 \begin{enum}
   \eitem{作业名称}
@@ -87,7 +87,7 @@ DeviceSpec(job="ps", replica=0, task=0, device_type="CPU", device_index=0)
 
 \subsection{上下文管理器}
 
-常常使用上下文管理器\ascii{(Context Manager)}指定\ascii{OP}默认的设备类型。
+常常使用上下文管理器\code{device(device\_spec)}指定\ascii{OP}设备规范，在该上下文的作用域内构造的\code{OP}在运行时将被放置在指定设备上运行。
 
 \begin{leftbar}
 \begin{python}
@@ -96,44 +96,11 @@ with g.device('/gpu:0'):
 \end{python}
 \end{leftbar}
 
-此处，显式地指定了图实例\code{g}。其中，\code{device}是\code{Graph}的一个方法，它定义实现了一个上下文管理器，从而实现栈式结构的上下文管理器，实现设备规范的闭包，合并，覆盖等特性。
-
-\begin{leftbar}
-\begin{python}
-def device(self, device_name_or_function):
-  device_function = to_device_function(device_name_or_function)
-  try:
-    self._device_function_stack.append(device_function)
-    yield
-  finally:
-    self._device_function_stack.pop()
-\end{python}
-\end{leftbar}
-
-\subsubsection{包装器}
-
-当用户使用\code{device}未显式地指定图实例，其使用隐式存在的默认图实例。
-
-\begin{leftbar}
-\begin{python}
-with device('/gpu:0'):
-  # All OPs constructed here will be placed on GPU 0.
-\end{python}
-\end{leftbar}
-
-也就是说，\code{device}函数事实上是对\code{get\_default\_graph().device}的一个简单包装。
-
-\begin{leftbar}
-\begin{python}
-# tensorflow/python/framework/ops.py
-def device(device_name_or_function):
-  return get_default_graph().device(device_name_or_function)
-\end{python}
-\end{leftbar}
+其中，\code{device}是\code{Graph}的一个方法，它设计了一个栈式结构的上下文管理器，实现设备规范的闭包、合并、覆盖等特性。
 
 \subsubsection{合并}
 
-可以对两个不同范围的设备规范进行合并。例如：
+可以对两个不同范围的设备规范进行合并。
 
 \begin{leftbar}
 \begin{python}
@@ -147,7 +114,7 @@ with device("/job:ps"):
 
 \subsubsection{覆盖}
 
-在合并两个不同范围的设备规范时，内部指定的设备规范具有高优先级，实现设备规范的覆盖。例如：
+在合并两个相同范围的设备规范时，内部指定的设备规范具有高优先级，实现设备规范的覆盖。
 
 \begin{leftbar}
 \begin{python}
@@ -172,9 +139,9 @@ with device("/device:GPU:0"):
 \end{python}
 \end{leftbar}
 
-\subsection{设备函数}
+\subsubsection{设备规范函数}
 
-当指定设备规范时，常常使用字符串，或\code{DeviceSpec}进行描述。也可以使用更加灵活的设备函数，它提供了一种更加灵活的扩展方式指定设备。例如：
+当指定设备规范时，常常使用字符串，或\code{DeviceSpec}进行描述。也可以使用更加灵活的\emph{设备规范函数}，它提供了一种更加灵活的扩展方式指定设备规范。设备规范函数是一个回调函数，入参为\code{Operation}，生成一个字符串格式的设备规范。
 
 \begin{leftbar}
 \begin{python}
@@ -191,22 +158,42 @@ with g.device(matmul_on_gpu):
 \end{python}
 \end{leftbar}
 
-事实上，当传递字符串，或者\code{DeviceSpec}给\code{device}函数时，首先会对该字符串，或\code{DeviceSpec}做一个简单的适配，使其具备设备函数的特性。
+\subsubsection{实现}
+
+\code{Graph.device(spec)}实现了一个栈式结构的上下文管理器，它可以接受字符串格式的设备规范，或者\emph{设备规范函数}。事实上，当给\code{device}函数传递字符串，或者\code{DeviceSpec}时，首先会对该字符串，或\code{DeviceSpec}做一个简单的适配，统一转换为设备规范函数。
 
 \begin{leftbar}
 \begin{python}
-def device(self, device_name_or_function):
-  if (device_name_or_function is not None
-      and not callable(device_name_or_function)):
-    device_function = pydev.merge_device(device_name_or_function)
-  else:
-    device_function = device_name_or_function
-  
-  # ignore others implements.
+class Graph(object):
+  def device(self, device_name_or_func):
+    def to_device_func():
+      if (device_name_or_func is not None
+          and not callable(device_name_or_func)):
+        return pydev.merge_device(device_name_or_func)
+      else:
+        return device_name_or_func
+
+    try:
+      self._device_function_stack.append(to_device_func())
+      yield
+    finally:
+      self._device_function_stack.pop()
 \end{python}
 \end{leftbar}
 
-其中，\code{pydev.merge\_device}的设计是一种典型的函数式设计，它返回了一个函数，使得\code{device}函数在后续处理不用区分字符串或函数两种类型。
+当用户使用\code{device}时，未显式地指定图实例，则隐式地使用全局唯一的默认图实例。也就是说，\code{tf.device(spec)}函数事实上是对\code{get\_default\_graph().device(spec)}的一个简单包装。
+
+\begin{leftbar}
+\begin{python}
+# tensorflow/python/framework/ops.py
+def device(device_name_or_function):
+  return get_default_graph().device(device_name_or_function)
+\end{python}
+\end{leftbar}
+
+\subsubsection{应用}
+
+在\code{Graph.device}实现中，\code{pydev.merge\_device}生成一个设备规范函数。该设备函数以输入的\code{spec}创建新的副本，通过调用\code{copy\_spec.merge\_from(current\_device)}，合并既有的\code{node\_def.device}设备规范，并且\code{node\_def.device}具有更高的优先级。实现较为隐晦，为什么\code{node\_def.device}具有较高优先级呢？这取决于\code{\_apply\_device\_functions}实现覆盖、合并、重置的需求。
 
 \begin{leftbar}
 \begin{python}
@@ -219,11 +206,25 @@ def merge_device(spec):
   def _device_function(node_def):
     current_device = DeviceSpec.from_string(node_def.device or "")
     copy_spec = copy.copy(spec)
-    
-    # IMPORTANT: current\_device takes precedence.
+
+    # IMPORTANT: `node\_def.device` takes precedence.
     copy_spec.merge_from(current_device)      
     return copy_spec
   return _device_function
+\end{python}
+\end{leftbar}
+
+当\code{Graph.create\_op}时，将调用\code{\_apply\_device\_functions}设置\code{NodeDef}的设备规范。它将对\code{\_device\_function\_stack}依次实施出栈操作，并调用相应的设备规范函数，并将结果直接设置为\code{NodeDef}的设备规范。如此，内嵌指定的\code{device}具有较高优先级，实现了合并、覆盖、重置外围指定的\code{device}。
+
+\begin{leftbar}
+\begin{python}
+class Graph(object):
+  def _apply_device_functions(self, op):
+    for device_function in reversed(self._device_function_stack):
+      if device_function is None:
+        break
+      # IMPORTANT: `node\_def.device` takes precedence.  
+      op._set_device(device_function(op)) 
 \end{python}
 \end{leftbar}
 
