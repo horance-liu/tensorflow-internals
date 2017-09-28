@@ -8,9 +8,9 @@
 
 \begin{content}
 
-\tf{}是一个使用\emph{数据流图}\ascii{(Dataflow Graph)}表达数值计算的开源软件库。它使用\emph{节点}表示抽象的数学计算，\emph{边}表示节点间传递的张量(多维数组)。\upcite{tf-white-paper}。数据流图是一种\ascii{DAG}图，当图按照某种拓扑次序依次执行时，张量在图中流动形成数据流，\ascii{Google}应此将其命名为\tf{}。
+\tf{}是一个使用\emph{数据流图}\ascii{(Dataflow Graph)}表达数值计算的开源软件库。它使用\emph{节点}表示抽象的数学计算，\emph{边}表示节点间传递的张量(多维数组)。\upcite{tf-white-paper}。数据流图是一种有向无环图\ascii{(DAG)}，当图按照某种拓扑次序依次执行时，张量在图中流动形成数据流，\tf{}应此而得名。
 
-在分布式运行时，数据流图的被分裂为多个子图，并被有效地编排到集群中的多个机器上并发执行；而在一个机器内，注册的子图再次被分裂，然后被编排到本地\emph{设备集}上并发执行。\tf{}支持多种异构设备的分布式计算，包括\ascii{CPU, GPU, ASIC}；\tf{}跨平台的卓越表现，使得它能够灵活地部署在各种计算平台上，包括台式机，服务器，移动终端。
+在分布式运行时，数据流图的被分裂为多个子图，并被有效地编排到集群中的多个机器上并发执行；而在一个机器内，注册的子图再次被分裂，然后被编排到本地\emph{设备集}上并发执行。\tf{}支持多种异构设备的分布式计算，包括\ascii{CPU, GPU, ASIC}。\tf{}跨平台的卓越表现，使得它能够灵活地部署在各种计算平台上，包括台式机，服务器，移动终端。
 
 \tf{}最初由\ascii{Google Brain}的研究员和工程师们开发出来，用于开展机器学习和深度神经网络的研究，包括语言识别、计算机视觉、自然语言理解、机器人、信息检索。但是，\tf{}系统架构的通用性和灵活性，使其广泛地用于其他科学领域的数值计算。
 
@@ -24,9 +24,7 @@
 
 基于\ascii{DistBelief}的经验，\ascii{Google Brain}对深度学习训练和推理的需求，及其深度学习框架的系统行为和属性，有了更全面更深刻地理解，并于\ascii{2015.11}重磅推出第二代分布式深度学习框架\tf{}。\tf{}作为\ascii{DistBelief}的后继者，革命性地对既有系统架构做了全新设计和实现，\tf{}一经发布，便在深度学习领域一鸣惊人，在社区中产生了重大的影响。
 
-
 \subsection{DistBelief}
-
 
 \ascii{DistBelief}是一个用于训练大规模神经网络的的分布式系统，是\ascii{Google}第一代分布式机器学习框架。自\ascii{2011}年以来，在\ascii{Google}内部大量使用\ascii{DistBelief}训练大规模的神经网络，并广泛地用于机器学习和深度学习领域的研究和应用，包括非监督学习、语言表示、图像分类、目标检测、视频分类、语音识别、序列预测、行人检测、强化学习等。
 
@@ -34,13 +32,9 @@
 
 \ascii{DistBelief}的编程模型是基于\emph{层}的\ascii{DAG}图。层可以看做是一种组合多个运算操作符的复合运算符，它完成特定的计算任务。例如，全连接层完成$f({W^T}x + b)$的复合计算，包括输入与权重的矩阵乘法，随后再与偏置相加，最后在线性加权值的基础上应用激活函数，实施非线性变换。
 
-
 \subsubsection{架构}
 
-
-\ascii{DistBelief}使用参数服务器\ascii{(Parameter Server)}的系统架构，训练作业包括两个分离的进程：无状态的\ascii{Worker}进程，用于模型训练的计算；有状态的\ascii{PS}进程，用于维护模型的参数。
-
-如\refig{parameter-server}所示，在分布式训练过程中，各个\emph{模型副本}异步地从\ascii{PS}上拉取训练参数$w$，当完成一步迭代运算后，推送参数的梯度$ \nabla w $到\ascii{PS}上去，并完成参数的更新。
+\ascii{DistBelief}使用参数服务器\ascii{(Parameter Server, 常称为PS)}的系统架构，训练作业包括两个分离的进程：无状态的\ascii{Worker}进程，用于模型训练的计算；有状态的\ascii{PS}进程，用于维护模型的参数。如\refig{parameter-server}所示，在分布式训练过程中，各个\emph{模型副本}异步地从\ascii{PS}上拉取训练参数$w$，当完成一步迭代运算后，推送参数的梯度$ \Delta w $到\ascii{PS}上去，并完成参数的更新。
 
 \begin{figure}[H]
 \centering
@@ -67,9 +61,7 @@
 \subsubsection{编程模型}
 
 
-\ascii{TensorFlow}使用数据流图表达计算过程和共享状态，使用节点表示抽象计算，使用边表示数据流。如\refig{tf-dataflow}所示，展示了\ascii{mnist}手写识别应用的数据流图。
-
-在该模型中，前向子图使用了\ascii{2}层全连接网络，分别为\ascii{ReLU}层和\ascii{Softmax}层。随后，使用\ascii{SGD}的优化算法，构建了与前向子图对应的反向子图，用于计算训练参数的梯度。最后，根据参数更新法则，构造训练参数的更新子图，完成训练参数的一次更新。
+\ascii{TensorFlow}使用数据流图表达计算过程和共享状态，使用节点表示抽象计算，使用边表示数据流。如\refig{tf-dataflow}所示，展示了\ascii{MNIST}手写识别应用的数据流图。在该模型中，前向子图使用了\ascii{2}层全连接网络，分别为\ascii{ReLU}层和\ascii{Softmax}层。随后，使用\ascii{SGD}的优化算法，构建了与前向子图对应的反向子图，用于计算训练参数的梯度。最后，根据参数更新法则，构造训练参数的更新子图，完成训练参数的一次迭代更新。
 
 \begin{figure}[H]
 \centering
@@ -86,7 +78,7 @@
   \eitem{延迟计算：图的构造与执行分离，并推迟计算图的执行过程；}
   \eitem{原子\ascii{OP}：\ascii{OP}是最小的抽象计算单元，支持构造复杂的网络模型；} 
   \eitem{抽象设备：支持\ascii{CPU, GPU, ASIC}多种异构计算设备类型；}
-  \eitem{抽象任务：基于\ascii{Task}的\ascii{PS}任务，对新的优化算法和网络模型具有良好的可扩展性。}  
+  \eitem{抽象任务：基于任务的\ascii{PS}，对新的优化算法和网络模型具有良好的可扩展性。}  
 \end{enum}
 
 \subsubsection{优势}
@@ -102,7 +94,7 @@
   \eitem{可扩展：支持\ascii{OP}扩展，\ascii{Kernel}扩展，\ascii{Device}扩展，通信协议扩展；}
   \eitem{可视化：使用\ascii{TensorBoard}可视化整个训练过程，极大地降低了\tf{}的调试过程；}
   \eitem{自动微分：\tf{}自动构造反向的计算子图，完成训练参数的梯度计算；}
-  \eitem{工作流：\ascii{TensorFlow}与\ascii{TensorFlow Serving}无缝集成支持了模型的训练、导入/导出、发布的工作流，并自动实现模型的热更新和版本管理。}      
+  \eitem{工作流：\ascii{TensorFlow}与\ascii{TensorFlow Serving}无缝集成，支持模型的训练、导入、导出、发布一站式的工作流，并自动实现模型的热更新和版本管理。}      
 \end{enum}
 
 \end{content}
@@ -115,9 +107,7 @@
 
 \subsection{开源}
 
-\ascii{2015.11}，\ascii{Google Research}发布文章：\href{https://research.googleblog.com/2015/11/tensorflow-googles-latest-machine\_9.html}{TensorFlow: Google's latest machine learning system, open sourced for everyone}，正式宣布新一代机器学习系统\ascii{TensorFlow}开源。
-
-随后，\ascii{TensorFlow}在\ascii{Github}上代码仓库短时间内获得了大量的\ascii{Star}和\ascii{Fork}。如\refig{tf-commits}所示，\ascii{TensorFlow}的社区活跃度已远远超过其他竞争对手，逐渐成为目前最为流行的深度学习框架，已然成为事实上的工业标准。
+\ascii{2015.11}，\ascii{Google Research}发布文章：\code{\href{https://research.googleblog.com/2015/11/tensorflow-googles-latest-machine\_9.html}{TensorFlow: Google's latest machine learning system, open sourced for everyone}}，正式宣布新一代机器学习系统\ascii{TensorFlow}开源。随后，\ascii{TensorFlow}在\ascii{Github}上代码仓库短时间内获得了大量的\ascii{Star}和\ascii{Fork}。如\refig{tf-commits}所示，\ascii{TensorFlow}的社区活跃度已远远超过其他竞争对手，成为目前最为流行的深度学习框架，已然成为事实上的工业标准。
 
 \begin{figure}[H]
 \centering
