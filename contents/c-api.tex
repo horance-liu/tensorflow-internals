@@ -28,7 +28,7 @@
 \begin{figure}[H]
 \centering
 \includegraphics[width=1.0\textwidth]{figures/swig.png}
-\caption{Swig代码生成器}}
+\caption{Swig代码生成器}
  \label{fig:swig}
 \end{figure}
 
@@ -82,7 +82,7 @@ tf_py_wrap_cc(
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/tf-client-session.png}
-\caption{客户端：tensorflow::Session实例创建过程}}
+\caption{客户端：tensorflow::Session实例创建过程}
  \label{fig:tf-client-session}
 \end{figure}
 
@@ -112,7 +112,7 @@ tf_py_wrap_cc(
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.5\textwidth]{figures/py-session-lifecycle.png}
-\caption{Python: Session生命周期}}
+\caption{Python: Session生命周期}
  \label{fig:py-session-lifecycle}
 \end{figure}
 
@@ -144,7 +144,7 @@ sess.close()
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/cc-session-lifecycle.png}
-\caption{C++: Session生命周期}}
+\caption{C++: Session生命周期}
  \label{fig:cc-session-lifecycle}
 \end{figure}
 
@@ -191,7 +191,7 @@ session->Close();
 \begin{figure}[H]
 \centering
 \includegraphics[width=1.0\textwidth]{figures/py-create-session.png}
-\caption{创建会话}}
+\caption{创建会话}
  \label{fig:py-create-session}
 \end{figure}
 
@@ -240,7 +240,7 @@ class BaseSession(SessionInterface):
 \begin{leftbar}
 \begin{python}[caption={tensorflow/bazel-bin/tensorflow/python/pywrap\_tensorflow\_internal.py}]
 def TF_NewDeprecatedSession(opts, status):
-    return _pywrap_tensorflow_internal.TF_NewDeprecatedSession(opts, status)
+  return _pywrap_tensorflow_internal.TF_NewDeprecatedSession(opts, status)
 
 def TF_NewSession(graph, opts, status):
   return _pywrap_tensorflow_internal.TF_NewSession(graph, opts, status)
@@ -254,12 +254,12 @@ def TF_NewSession(graph, opts, status):
 \begin{leftbar}
 \begin{c++}[caption={tensorflow/bazel-bin/tensorflow/python/pywrap\_tensorflow\_internal.cc}]
 static PyMethodDef SwigMethods[] = {
-   // ...
-   { (char *)"TF_NewDeprecatedSession", 
-     _wrap_TF_NewDeprecatedSession, METH_VARARGS, NULL},
+  // ...
+  { (char *)"TF_NewDeprecatedSession", 
+    _wrap_TF_NewDeprecatedSession, METH_VARARGS, NULL},
 
-   { (char *)"TF_NewSession", 
-     _wrap_TF_NewSession, METH_VARARGS, NULL},
+  { (char *)"TF_NewSession", 
+    _wrap_TF_NewSession, METH_VARARGS, NULL},
 };
 \end{c++}
 \end{leftbar}
@@ -330,7 +330,7 @@ Status NewSession(const SessionOptions& options, Session** out_session) {
 \begin{figure}[H]
 \centering
 \includegraphics[width=1.0\textwidth]{figures/cc-session-factory.png}
-\caption{tensorflow::Session创建：抽象工厂方法}}
+\caption{tensorflow::Session创建：抽象工厂方法}
  \label{fig:cc-session-factory}
 \end{figure}
 
@@ -347,7 +347,7 @@ Status NewSession(const SessionOptions& options, Session** out_session) {
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/py-session-create-graph.png}
-\caption{创建图}}
+\caption{创建图}
  \label{fig:py-session-create-graph}
 \end{figure}
 
@@ -477,7 +477,7 @@ Status GrpcSession::ExtendImpl
 \begin{figure}[H]
 \centering
 \includegraphics[width=1.0\textwidth]{figures/py-session-run.png}
-\caption{迭代执行}}
+\caption{迭代执行}
  \label{fig:py-session-run}
 \end{figure}
 
@@ -627,7 +627,7 @@ public:
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/py-session-close.png}
-\caption{关闭会话}}
+\caption{关闭会话}
  \label{fig:py-session-close}
 \end{figure}
 
@@ -844,7 +844,7 @@ public:
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.7\textwidth]{figures/tf-graph-session-relation.png}
-\caption{计算图：会话引用计数器技术}}
+\caption{计算图：会话引用计数器技术}
  \label{fig:tf-graph-session-relation}
 \end{figure}
 
@@ -855,7 +855,7 @@ public:
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.8\textwidth]{figures/tf-old-session-interface.png}
-\caption{图实例：序列化/反序列化}}
+\caption{图实例：序列化/反序列化}
  \label{fig:tf-old-session-interface}
 \end{figure}
 
