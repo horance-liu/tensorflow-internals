@@ -23,7 +23,7 @@
   \eitem{\code{pywrap\_tensorflow\_internal.cc}: 负责对接下层\ascii{C API}调用。}
 \end{enum}
 
-如\refig{swig}所示，\code{pywrap\_tensorflow\_internal.py}模块首次被导入时，自动地加载\code{\_pywrap\_tensorflow\_internal.so}的动态链接库；其中，\code{\_pywrap\_tensorflow\_internal.so}包含了整个\tf{}运行时的所有符号。在\code{pywrap\_tensorflow\_internal.cc}的实现中，静态注册了一个函数符号表，实现了\ascii{Python}函数名到\ascii{C}函数名的二元关系。在运行时，按照\ascii{Python}的函数名称，匹配找到对应的\ascii{C}函数实现，最终实现到\code{c\_api.c}具体实现的调用关系。
+如\refig{swig}所示，\code{pywrap\_tensorflow\_internal.py}模块首次被导入时，自动地加载\code{\_pywrap\_tensorflow\_internal.so}的动态链接库；其中，\code{\_pywrap\_tensorflow\_internal.so}包含了整个\tf{}运行时的所有符号。在\code{pywrap\_tensorflow\_internal.cc}的实现中，静态注册了一个函数符号表，实现了\ascii{Python}函数名到\ascii{C}函数名的二元关系。在运行时，按照\ascii{Python}的函数名称，匹配找到对应的\ascii{C}函数实现，最终实现\ascii{Python}到\code{c\_api.c}具体实现的调用关系。
 
 \begin{figure}[H]
 \centering
@@ -209,7 +209,7 @@ class Session(BaseSession):
 \end{python}
 \end{leftbar}
 
-在\code{BaseSession}的构造函数中，将调用\code{pywrap\_tensorflow}模块中的函数。其中，\code{TF\_NewDeprecatedSession}是遗留下来的，已被废弃的接口实现。新的接口在性能提升方面做了很大的改进，但不幸的是，截止\ascii{r1.3}版本，新的接口实现还未被正式启用。
+在\code{BaseSession}的构造函数中，将调用\code{pywrap\_tensorflow}模块中的函数。其中，\code{TF\_NewDeprecatedSession}是遗留下来的，已被废弃的接口实现。在新的\ascii{API}中，直接将图实例传递给后端\ascii{C++}，避免了前后端图实例序列化的开销。
 
 \begin{leftbar}
 \begin{python}[caption={tensorflow/python/client/session.py}]
@@ -217,9 +217,15 @@ from tensorflow.python import pywrap_tensorflow as tf_session
 
 class BaseSession(SessionInterface):
   def __init__(self, target='', graph=None, config=None):
-    # ignoring implements...
+    # default graph
+    if graph is None:
+      self._graph = ops.get_default_graph()
+    else:
+      self._graph = graph
+
+    # handle to tensorflow::Session
     self._session = None
-    opts = tf_session.TF_NewSessionOptions(target=self._target,
+    opts = tf_session.TF_NewSessionOptions(target=self._target, 
                                            config=config)
     try:
       with errors.raise_exception_on_not_ok_status() as status:
@@ -232,6 +238,43 @@ class BaseSession(SessionInterface):
       tf_session.TF_DeleteSessionOptions(opts)
 \end{python}
 \end{leftbar}
+
+如\refig{tf-graph-inst}所示，\code{ScopedTFGraph}是对\code{TF\_Graph}的包装器，完成类似于\ascii{C++}的\ascii{RAII}的工作机制。而\code{TF\_Graph}持有\code{ternsorflow::Graph}实例。其中，\code{self.\_graph.\_c\_graph}返回一个\code{TF\_Graph}实例，后者通过\ascii{C API}创建的图实例。
+
+\begin{leftbar}
+\begin{python}[caption={tensorflow/python/framework/ops.py}]
+class Graph(object):
+  def __init__(self):
+    if _USE_C_API:
+      self._scoped_c_graph = c_api_util.ScopedTFGraph()
+    else:
+      self._scoped_c_graph = None
+
+  def _c_graph(self):
+    if self._scoped_c_graph:
+      return self._scoped_c_graph.graph
+    return None
+\end{python}
+\end{leftbar}
+
+\begin{leftbar}
+\begin{python}[caption={tensorflow/python/framework/c\_api\_util.py}]
+class ScopedTFGraph(object):
+  def __init__(self):
+    self.graph = c_api.TF_NewGraph()
+
+  def __del__(self):
+    if c_api.TF_DeleteGraph is not None:
+      c_api.TF_DeleteGraph(self.graph)
+\end{python}
+\end{leftbar}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.3\textwidth]{figures/tf-graph-inst.png}
+\caption{前后端：图实例传递}
+ \label{fig:tf-graph-inst}
+\end{figure}
 
 \subsubsection{Python包装器}
 
@@ -309,7 +352,7 @@ TF_DeprecatedSession* TF_NewDeprecatedSession(const TF_SessionOptions* opt,
 \begin{c++}[caption={tensorflow/c/c\_api.c}]
 Status NewSession(const SessionOptions& options, Session** out_session) {
   SessionFactory* factory;
-  const Status s = SessionFactory::GetFactory(options, &factory);
+  Status s = SessionFactory::GetFactory(options, &factory);
   if (!s.ok()) {
     *out_session = nullptr;
     return s;
@@ -340,7 +383,9 @@ Status NewSession(const SessionOptions& options, Session** out_session) {
 
 \begin{content}
 
-随后，\ascii{Python}前端将迭代调用\code{Session.run}接口，将构造好的计算图，以\code{GraphDef}的形式发送给\cpp{}后端。其中，前端每次调用\code{Session.run}接口时，都会试图将新增节点的计算图发送给后端系统，以便将新增节点的计算图\ascii{Extend}到原来的计算图中。特殊地，在首次调用\code{Session.run}时，将发送整个计算图给后端系统。
+在既有的接口实现中，需要将图构造期构造好的图序列化，并传递给后端\ascii{C++}系统。而在新的接口实现中，无需实现图的创建或扩展。因为在创建\ascii{OP}时，节点实时添加至后端\ascii{C++}系统的图实例中。但是，既有接口实现，对于理解系统行为较为重要，在次做简单地阐述。
+
+\ascii{Python}前端将迭代调用\code{Session.run}接口，将构造好的计算图，以\code{GraphDef}的形式发送给\cpp{}后端。其中，前端每次调用\code{Session.run}接口时，都会试图将新增节点的计算图发送给后端系统，以便将新增节点的计算图\ascii{Extend}到原来的计算图中。特殊地，在首次调用\code{Session.run}时，将发送整个计算图给后端系统。
 
 后端系统首次调用\code{Session.Extend}时，转调(或等价实现)\code{Session.Create}。以后，后端系统每次调用\code{Session.Extend}时将真正执行\code{Extend}的语义，将新增的计算图的节点追加至原来的计算图中。
 
@@ -353,7 +398,7 @@ Status NewSession(const SessionOptions& options, Session** out_session) {
 
 \subsection{编程接口}
 
-在既有的接口实现中，需要将图构造期构造好的图序列化，并传递给后端\ascii{C++}系统，这里通过\code{\_extend\_graph}实现。在新的接口实现中，无需实现图的创建或扩展，因为在创建\ascii{OP}时，后端\ascii{C++}直接创建相应的图实例，并将节点实时添加至后端系统的图实例中。
+在既有的接口实现中，通过\code{\_extend\_graph}实现图实例的扩展。
 
 \begin{leftbar}
 \begin{python}[caption={tensorflow/python/client/session.py}]
@@ -403,7 +448,8 @@ def TF_ExtendGraph(sess, graph_def, status):
 \begin{c++}[caption={tensorflow/bazel-bin/tensorflow/python/pywrap\_tensorflow\_internal.cc}]
 static PyMethodDef SwigMethods[] = {
   // ignore implements...
-  { (char *)"TF_ExtendGraph", _wrap_TF_ExtendGraph, METH_VARARGS, NULL},
+  { (char *)"TF_ExtendGraph", 
+    _wrap_TF_ExtendGraph, METH_VARARGS, NULL},
 };
 \end{c++}
 \end{leftbar}
@@ -541,7 +587,7 @@ static PyMethodDef SwigMethods[] = {
 
 \subsection{C API}
 
-\code{TF\_Run}是\ascii{C API}对接上层编程环境的接口。首先，它完成输入数据从\ascii{C}到\cpp{}的格式转换，并启动后台的\code{tensorflow::Session}的执行过程。当执行完成后，再将\code{outputs}的输出数据从\cpp{}到\ascii{C}的格式转换。\code{TF\_SessionRun}与\code{TF\_Run}工作机制差不多，在此不再冗述。
+在既有的接口中，\code{TF\_Run}是\ascii{C API}对接上层编程环境的接口。首先，它完成输入数据从\ascii{C}到\cpp{}的格式转换，并启动后台的\code{tensorflow::Session}的执行过程。当执行完成后，再将\code{outputs}的输出数据从\cpp{}到\ascii{C}的格式转换。\code{TF\_SessionRun}与\code{TF\_Run}工作机制差不多，在此不再冗述。
 
 \begin{leftbar}
 \begin{c++}[caption={tensorflow/c/c\_api.c}]
@@ -579,7 +625,7 @@ void TF_SessionRun(TF_Session* session,
 
 \subsection{后端系统}
 
-\code{tensorflow::Session}在运行时其动态类型，将多态地调用相应的子类实现。
+\code{tensorflow::Session}在运行时按照其动态类型，将多态地调用相应的子类实现。
 
 \begin{leftbar}
 \begin{c++}[caption={tensorflow/core/common\_runtime/session.h}]
@@ -669,6 +715,8 @@ def TF_CloseDeprecatedSession(sess, status):
 
 \subsubsection{C++包装器}
 
+\code{\_wrap\_TF\_CloseSession/\_wrap\_TF\_CloseDeprecatedSession}将分别转调\ascii{C API}对应的\code{TF\_CloseSession/TF\_CloseDeprecatedSession}接口函数。
+
 \begin{leftbar}
 \begin{c++}[caption={tensorflow/bazel-bin/tensorflow/python/pywrap\_tensorflow\_internal.cc}]
 static PyMethodDef SwigMethods[] = {
@@ -681,8 +729,6 @@ static PyMethodDef SwigMethods[] = {
 };
 \end{c++}
 \end{leftbar}
-
-最终，\code{\_wrap\_TF\_CloseSession/\_wrap\_TF\_CloseDeprecatedSession}将分别转调\ascii{C API}对应的\code{TF\_CloseSession/TF\_CloseDeprecatedSession}接口函数。
 
 \subsection{C API}
 
@@ -730,7 +776,7 @@ public:
 
 \subsection{编程接口}
 
-当\ascii{Client}调用\code{Session.\_\_del\_\_}时，先启动\code{Session.close}的调用，最终会调用\code{pywrap\_tensorflow}模块中的函数\code{TF\_DeleteDeprecatedSession}。而对于新的接口实现，调用\code{TF\_DeleteSession}。
+当\ascii{Client}调用\code{Session.\_\_del\_\_}时，先启动\code{Session.close}的调用，最终会调用\code{pywrap\_tensorflow}模块中的函数\code{TF\_DeleteSession/TF\_DeleteDeprecatedSession}。
 
 \begin{leftbar}
 \begin{python}[caption={tensorflow/python/client/session.py}]
@@ -771,6 +817,8 @@ def TF_DeleteDeprecatedSession(sess, status):
 
 \subsubsection{C++包装器}
 
+\code{\_wrap\_TF\_DeleteSession/\_wrap\_TF\_DeleteDeprecatedSession}将分别转调\ascii{C API}对应的\code{TF\_DeleteSession/TF\_DeleteDeprecatedSession}接口函数。
+
 \begin{leftbar}
 \begin{c++}[caption={tensorflow/bazel-bin/tensorflow/python/pywrap\_tensorflow\_internal.cc}]
 static PyMethodDef SwigMethods[] = {
@@ -783,8 +831,6 @@ static PyMethodDef SwigMethods[] = {
 };
 \end{c++}
 \end{leftbar}
-
-最终，\code{\_wrap\_TF\_DeleteSession/\_wrap\_TF\_DeleteDeprecatedSession}将分别转调\ascii{C API}对应的\code{TF\_DeleteSession/TF\_DeleteDeprecatedSession}接口函数。
 
 \subsection{C API}
 
@@ -839,18 +885,18 @@ public:
 
 如\refig{tf-graph-session-relation}所示，一个\code{Session}只能运行一个图实例。如果一个\code{Session}要运行其他的图实例，必须先关掉\code{Session}，然后再将新的图实例注册到此\code{Session}中，最后启动新的计算图的执行过程。
 
-但反过来，一个计算图可以运行在多个\code{Session}实例上。如果在\code{Graph}实例上维持\code{Session}的引用计数器，在\code{Session}创建时，在该图实例上增加\ascii{1}；在\code{Session}销毁时(不是关闭\code{Session})，在该图实例上减少1。当计数器为\ascii{0}时，则自动删除图实例。在新的接口实现中，实现了该引用计数器的技术。
+但反过来，一个计算图可以运行在多个\code{Session}实例上。如果在\code{Graph}实例上维持\code{Session}的引用计数器，在\code{Session}创建时，在该图实例上增加\ascii{1}；在\code{Session}销毁时(不是关闭\code{Session})，在该图实例上减少\ascii{1}；当计数器为\ascii{0}时，则自动删除图实例。在新的接口实现中，实现了该引用计数器的技术。
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.7\textwidth]{figures/tf-graph-session-relation.png}
-\caption{计算图：会话引用计数器技术}
+\caption{计算图：Session引用计数器技术}
  \label{fig:tf-graph-session-relation}
 \end{figure}
 
 \subsection{消除序列化}
 
-如\refig{tf-old-session-interface}所示，在遗留的接口实现中，前端\ascii{Python}在图构造期，将图构造完成后，通过\code{Session::Create}或\code{Session::Extend}接口将其序列化，并传递给后端\ascii{C++}系统，后端反序列化获取相应的图实例。这本质是一个图实例的拷贝过程，具有很大的时延开销。
+如\refig{tf-old-session-interface}所示，在遗留的接口实现中，前端\ascii{Python}在图构造期，将图构造完成后，并将其序列化，最后通过\code{Session::Create}或\code{Session::Extend}传递给后端\ascii{C++}系统。这本质是一个图实例的拷贝过程，具有很大的时延开销。
 
 \begin{figure}[H]
 \centering
