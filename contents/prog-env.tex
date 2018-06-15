@@ -27,12 +27,12 @@ $ git clone git@github.com:tensorflow/tensorflow.git
 \end{python}
 \end{leftbar}
 
-然后，切换到最新的稳定分支上。例如，\code{r1.3}分支。
+然后，切换到最新的稳定分支上。例如，\code{r1.4}分支。
 
 \begin{leftbar}
 \begin{python}
 $ cd tensorflow
-$ git checkout r1.3
+$ git checkout r1.4
 \end{python}
 \end{leftbar}
 
@@ -68,7 +68,7 @@ $ tree -d -L 1 ./tensorflow
 \end{c++}
 \end{leftbar}
 
-截止当前最新发布的\ascii{1.3}版本，\tf{}代码库拥有大约\ascii{100}万代码。其中，包括\ascii{53}万行\ascii{C/C++}代码，\ascii{37}万行\ascii{Python}代码，而且在不断膨胀之中。因此，可以推测\ascii{Python}提供的编程接口是最完善的；相比之下，其他编程语言尚处于起步阶段。
+截止当前最新发布的\ascii{1.4}版本，\tf{}代码库拥有大约\ascii{100}万代码。其中，包括\ascii{53}万行\ascii{C/C++}代码，\ascii{37}万行\ascii{Python}代码，而且代码规模在不断膨胀之中。其中，\ascii{Python}提供的\ascii{API}是最完善的；相比之下，其他编程语言的\ascii{API}尚未成熟，甚至处于起步阶段。
 
 \begin{leftbar}
 \begin{python}[caption={TensorFlow代码统计}]
@@ -149,7 +149,7 @@ SUM:                  2091    60894     65813    312904
 
 \subsection{Python}
 
-\ascii{Python}定义和实现了\tf{}的编程模型，并对外开放\ascii{API}供程序员使用，其源码结构如下所示，这也是本书重点剖析的对象。
+\ascii{Python}定义和实现了\tf{}的编程模型，并对外开放\ascii{API}供程序员使用，其源码结构如下所示，这也是本书重点剖析的部分。
 
 \begin{leftbar}
 \begin{c++}[caption={Python源码结构}]
@@ -196,7 +196,7 @@ SUM:                  757     46549     70338    183925
 
 \subsection{Contrib}
 
-\code{contrib}是第三方贡献的编程库，它也是\tf{}标准化之前的实验性编程接口，犹如\ascii{Boost}社区与\ascii{C++}标准之间的关系。当\code{contrib}的接口成熟后，便会被\tf{}标准化，并从\code{contrib}中搬迁至\code{core, python}中，并正式对外发布\ascii{API}。
+\code{contrib}是第三方贡献的编程库，它也是\tf{}标准化之前的实验性编程接口，犹如\ascii{Boost}社区与\ascii{C++}标准之间的关系。当\code{contrib}的接口成熟后，便会被\tf{}标准化，并从\code{contrib}中搬迁至\code{core, python}中，并正式对外发布。
 
 \begin{leftbar}
 \begin{python}[caption={Contrib源码结构}]
@@ -283,7 +283,7 @@ SUM:                  757     46549     70338    183925
 \end{python}
 \end{leftbar}
 
-由于\tf{}社区相当活跃，\code{contrib}的变更相当频繁，截止\ascii{1.3}版本，大约有\ascii{23}万行代码，主要由\ascii{Python}设计和实现的编程接口，部分运行时由\ascii{C++}实现。
+由于\tf{}社区相当活跃，\code{contrib}的变更相当频繁，截止\ascii{1.4}版本，大约有\ascii{23}万行代码，主要由\ascii{Python}设计和实现的编程接口，部分运行时由\ascii{C++}实现。
 
 \begin{leftbar}
 \begin{python}[caption={Contrib代码统计}]
@@ -312,9 +312,9 @@ SUM:                 1457     52901     85570    233712
 
 \subsection{StreamExecutor}
 
-\ascii{StreamExecutor}是\ascii{Google}另一个开源组件库，它提供了主机端(\ascii{host-side})的编程模型和运行时环境，实现了对\ascii{CUDA}和\ascii{OpenCL}的统一封装。使得主机端的代码中，可以将功能相同、数据并行的内核函数无缝地部署在\code{CUDA}或\code{OpenCL}的计算设备上执行。
+\ascii{StreamExecutor}是\ascii{Google}另一个开源组件库，它提供了主机端(\ascii{host-side})的编程模型和运行时环境，实现了\ascii{CUDA}和\ascii{OpenCL}的统一封装。使得在主机端的代码中，可以将\ascii{Kernel}函数无缝地部署在\code{CUDA}或\code{OpenCL}的计算设备上执行。
 
-目前，\ascii{StreamExecutor}被大量应用于\ascii{Google}内部的\ascii{GPGPU}应用程序的运行时。其中，\tf{}运行时也包含了一个\ascii{StreamExecutor}的快照版本，用于封装\ascii{CUDA}和\code{OpenCL}的运行时。本书将简单介绍\ascii{CUDA}的编程模型和线程模型，并详细介绍\ascii{StreamExecutor}的系统架构与工作原理，揭示\ascii{Kernel}一般的实现模式和习惯用法。
+目前，\ascii{StreamExecutor}被大量应用于\ascii{Google}内部\ascii{GPGPU}应用程序的运行时。其中，\tf{}运行时也包含了一个\ascii{StreamExecutor}的快照版本，用于封装\ascii{CUDA}和\code{OpenCL}的运行时。本书将简单介绍\ascii{CUDA}的编程模型和线程模型，并详细介绍\ascii{StreamExecutor}的系统架构与工作原理，揭示\ascii{Kernel}函数的实现模式和习惯用法。
 
 \begin{leftbar}
 \begin{c++}[caption={StreamExecutor源码结构}]
@@ -387,7 +387,7 @@ SUM:                  749     26516     30574    125277
 
 \subsection{环境准备}
 
-\ascii{TensorFlow}的前端是一个支持多语言的编程接口。因此，编译\ascii{TensorFlow}源代码之前，需要事先安装相关的编译器、解释器、及其运行时环境。例如，使用\ascii{Python}作为编程接口，需要事先安装\ascii{Python}解释器。其次，在构建系统之前，也需要事先安装\ascii{GCC}或\ascii{Clang}等\ascii{C++}编译器，用于编译后端系统实现。因为\ascii{TensorFlow}使用\ascii{C++11}语法实现，所以要保证安装\ascii{C++}编译器要支持\ascii{C++11}。另外，\ascii{TensorFlow}使用\ascii{Bazel}的构建工具，可以看做一种更高抽象的\ascii{Make}工具。不幸的是，\ascii{Bazel}使用\ascii{Java8}实现，其依赖于\ascii{JDK}。因此在安装\ascii{Bazel}之前，还得需要事先安装\ascii{1.8}版本\ascii{JDK}。
+\ascii{TensorFlow}的前端是一个支持多语言的编程接口。因此，编译\ascii{TensorFlow}源代码之前，需要事先安装相关的编译器、解释器、及其运行时环境。例如，使用\ascii{Python}作为编程接口，需要事先安装\ascii{Python}解释器。其次，在构建系统之前，也需要事先安装\ascii{GCC}或\ascii{Clang}等\ascii{C++}编译器，用于编译后端系统实现。因为\ascii{TensorFlow}使用\ascii{C++11}语法实现，所以要保证安装\ascii{C++}编译器要支持\ascii{C++11}。另外，\ascii{TensorFlow}使用\ascii{Bazel}的构建工具，可以将其视为更高抽象的\ascii{Make}工具。不幸的是，\ascii{Bazel}使用\ascii{Java8}实现，其依赖于\ascii{JDK}。因此在安装\ascii{Bazel}之前，还得需要事先安装\ascii{1.8}及以上版本的\ascii{JDK}。
 
 \subsubsection{安装JDK}
 
@@ -414,13 +414,13 @@ $ brew install bazel
 
 \begin{leftbar}
 \begin{python}
-$ /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+$ ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 \end{python}
 \end{leftbar}
 
 \subsubsection{安装Swig}
 
-\ascii{TensorFlow}使用\ascii{Swig}构建多语言的编程环境，自动生成相关的包装器。因此，在构建之前需要事先安装\ascii{Swig}的工具包。
+\ascii{TensorFlow}使用\ascii{Swig}构建多语言的编程环境，自动生成相关编程语言的包装器。因此，在构建之前需要事先安装\ascii{Swig}的工具包。
 
 \begin{leftbar}
 \begin{python}
@@ -448,7 +448,7 @@ $ brew install pip
 
 \subsubsection{安装CUDA工具包}
 
-当系统安装了\ascii{CUDA}计算兼容性大于或等于\ascii{3.0}的\ascii{GPU}卡时，则需要安装\ascii{CUDA}工具包, \ascii{cuDNN}，实现\tf{}运行时的\ascii{GPU}加速。推荐从\ascii{NVIDIA}官网上下载\ascii{CUDA Toolkit 8}及以上版本，并安装到系统中，配置相关环境变量。
+当系统安装了\ascii{CUDA}计算兼容性大于或等于\ascii{3.0}的\ascii{GPU}卡时，则需要安装\ascii{CUDA}工具包，及其\ascii{cuDNN}，实现\tf{}运行时的\ascii{GPU}加速。推荐从\ascii{NVIDIA}官网上下载\ascii{CUDA Toolkit 8}及以上版本，并安装到系统中，配置相关环境变量。
 
 \begin{leftbar}
 \begin{python}
@@ -507,7 +507,7 @@ $ bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg
 
 \begin{leftbar}
 \begin{python}
-$ sudo pip install /tmp/tensorflow_pkg/tensorflow-1.3.0-py2-none-any.whl
+$ sudo pip install /tmp/tensorflow_pkg/tensorflow-1.4.0-py2-none-any.whl
 \end{python}
 \end{leftbar}
 
@@ -528,7 +528,7 @@ Hello, TensorFlow!
 
 \subsection{IDE}
 
-在阅读代码之前，选择一个适宜的\ascii{IDE}可以改善代码阅读的质量和速度。推荐使用\ascii{Eclipse CDT}阅读\ascii{C++}代码，安装\code{PyDev}的插件阅读\ascii{Python}代码。同时，也推荐\ascii{JetBrains}出品的\ascii{Clion}阅读\ascii{C++}，\ascii{PyCharm}阅读\ascii{Python}。但是，当阅读\ascii{C++}代码时，需要配置\ascii{TensorFlow, CUDA, Eigen3}头文件的搜索目录，并添加相关预定义的宏，以便\code{CDT}正确解析代码中的符号。本章以\ascii{Eclipse CDT}为例讲述相关配置方法。
+在阅读代码之前，选择一个适宜的\ascii{IDE}可以改善代码阅读的质量和速度。推荐使用\ascii{Eclipse CDT}阅读\ascii{C++}代码，安装\code{PyDev}的插件阅读\ascii{Python}代码。同时，也推荐\ascii{JetBrains}出品的\ascii{Clion}阅读\ascii{C++}，\ascii{PyCharm}阅读\ascii{Python}。但是，当阅读\ascii{C++}代码时，需要配置\ascii{TensorFlow, CUDA, Eigen3}头文件的搜索目录，并添加相关预定义的宏，以便\code{IDE}正确解析代码中的符号。本章以\ascii{Eclipse CDT}为例讲述相关配置方法。
 
 \subsubsection{创建Eclipse工程}
 
@@ -573,7 +573,7 @@ Hello, TensorFlow!
 
 \begin{content}
 
-在构建\ascii{TensorFlow}系统时，\ascii{Bazel}或\ascii{CMake}的构建工具会自动生成部分源代码。理解代码生成器的输出结果，可以加深理解系统的行为模式。
+在构建\ascii{TensorFlow}系统时，\ascii{Bazel}或\ascii{CMake}会自动生成部分源代码。理解代码生成器的输出结果，可以加深理解系统的行为模式。
 
 \end{content}
 

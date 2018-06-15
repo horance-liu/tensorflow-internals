@@ -10,7 +10,7 @@
 
 在\tf{}的计算图中，使用\ascii{OP}表示节点，根据\ascii{OP}之间计算和数据依赖关系，构造\ascii{OP}之间生产与消费的数据依赖关系，并通过有向边表示。其中，有向边存在两种类型，一种承载数据，并使用\code{Tensor}表示；另一种不承载数据，仅表示计算依赖关系。
 
-本章将阐述\tf{}中最重要的领域对象：计算图。为了全面阐述计算图的关键实现技术，将分别探讨前后端的系统设计和实现，并探究前后端系统间计算图转换的工作流原理。
+本章将阐述\tf{}中最重要的领域对象：\emph{计算图}。为了全面阐述计算图的关键实现技术，将分别探讨前后端的系统设计和实现，并探究前后端系统间计算图转换的工作流原理。
 
 \end{content}
 
@@ -30,7 +30,7 @@
 
 在计算图构造期间，通过\ascii{OP}构造器\ascii{(OP Constructor)}，构造\code{Operation}实例，并将其注册至默认的图实例中。与此同时，\code{Operation}反过来通过\ascii{graph}直接持有该图实例。
 
-\code{Operation}的元数据由\code{OpDef}与\code{NodeDef}持有，它们以\ascii{ProtoBuf}的格式存在，它描述了\code{Operation}最本质的东西。其中，\code{OpDef}描述了\ascii{OP}的静态属性信息，例如\ascii{OP}的名称，输入/输出参数列表，属性集定义等信息。而\code{NodeDef}描述了\ascii{OP}的动态属性值信息。
+\code{Operation}的元数据由\code{OpDef}与\code{NodeDef}持有，它们以\ascii{ProtoBuf}的格式存在，它描述了\code{Operation}最本质的东西。其中，\code{OpDef}描述了\ascii{OP}的静态属性信息，例如\ascii{OP}的名称，输入/输出参数列表，属性集定义等信息。而\code{NodeDef}描述了\ascii{OP}的动态属性值信息，例如属性值等信息。
 
 \begin{figure}[H]
 \centering
@@ -95,7 +95,7 @@ class Operation(object):
 
 \subsubsection{属性集}
 
-\code{Operation}定义了常用了属性方法，用于获取该\ascii{OP}的元数据。其中，\code{name}表示图中节点的名称，包括\code{name\_scope}的层次名称，在图实例的范围内是唯一的，例如\code{relu/MatMul}；\code{type}则表示该\code{OP}类型唯一的名称，例如\code{MatMul, Variable}。
+\code{Operation}定义了常用了属性方法，用于获取该\ascii{OP}的元数据。其中，\code{name}表示图中节点的名称，包括\code{name\_scope}的层次名称，在图实例的范围内是唯一的，例如\code{layer\_2/MatMul}；\code{type}则表示该\code{OP}类型唯一的名称，例如\code{MatMul, Variable}。
 
 \begin{leftbar}
 \begin{python}
@@ -960,7 +960,7 @@ _InitOpDefLibrary.op_list_ascii = """op {
 
 这个过程常称为计算图的构造。在计算图的构造期间，并不会触发运行时的\ascii{OP}运算，它仅仅描述计算节点之间的依赖关系，并构建\ascii{DAG}图，对整个计算过程做整体规划。
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/py-op-factory-and-repo.png}
 \caption{Graph: OP工厂 + OP仓库}
@@ -973,7 +973,7 @@ _InitOpDefLibrary.op_list_ascii = """op {
 
 然后，\ascii{OP}构造器调用一段自动生成的代码，进而转调\code{OpDefLibrary.apply\_op}方法。
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/py-op-constructor.png}
 \caption{OP构造器与代码生成器}
@@ -984,7 +984,7 @@ _InitOpDefLibrary.op_list_ascii = """op {
 
 然后，如\refig{py-graph-create-op}所示。\code{OpDefLibrary}根据\ascii{OP}的名字从\code{OpDefLibrary}中，找到对应\code{OpDef}实例；最终，通过\code{Graph.create\_op}的工厂方法，创建\code{NodeDef}实例，进而创建\code{Operation}实例，将其自身注册到图实例中。
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/py-graph-create-op.png}
 \caption{创建Operation实例: 创建OpDef, NodeDef实例}
@@ -1018,7 +1018,7 @@ _InitOpDefLibrary.op_list_ascii = """op {
 \end{enum}
 
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/cc-edge-model.png}
 \caption{领域对象：Edge}
@@ -1027,7 +1027,7 @@ _InitOpDefLibrary.op_list_ascii = """op {
 
 例如，存在两个前驱节点\code{s1, s2}，都存在两条输出边；存在两个后驱节点\code{d1, d2}，都存在两条输入边。
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/cc-edge-model-example.png}
 \caption{边例子}
@@ -1063,7 +1063,7 @@ TensorId ::= node_name:src_output
 
 \code{Node}(节点)可以拥有零条或多条输入/输出的边，并使用\code{in\_edges, out\_edges}分别表示输入边和输出边的集合。另外，\code{Node}持有\code{NodeDef, OpDef}。其中，\code{NodeDef}包含设备分配信息，及其\ascii{OP}的属性值列表；\code{OpDef}持有\ascii{OP}的元数据，包括\ascii{OP}输入输出类型等信息。
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/cc-node-model.png}
 \caption{领域对象：Node}
@@ -1107,7 +1107,7 @@ Status Node::input_node(int idx, const Node** n) const {
 
 \code{Graph}(计算图)就是节点与边的集合。计算图是一个\ascii{DAG}图，计算图的执行过程将按照\ascii{DAG}的拓扑排序，依次启动\ascii{OP}的运算。其中，如果存在多个入度为\ascii{0}的节点，\ascii{TensorFlow}运行时可以实现并发，同时执行多个\ascii{OP}的运算，提高执行效率。
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/cc-graph-model.png}
 \caption{领域模型：图}
@@ -1120,7 +1120,7 @@ Status Node::input_node(int idx, const Node** n) const {
 
 \code{Source}与\code{Sink}之间，通过连接「控制依赖」的边，保证计算图的执行始于\code{Source}节点，终于\code{Sink}节点。它们之前的控制依赖边，其\code{src\_output, dst\_input}值都为\ascii{-1}。
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/cc-empty-graph.png}
 \caption{空图}
@@ -1158,7 +1158,7 @@ Graph::Graph(const OpRegistryInterface* ops)
 
 在前端，用户使用\ascii{OP}构造器，将构造任意复杂度的计算图。对于运行时，实现将用户构造的计算图通过控制依赖的边与\code{Source/Sink}节点连接，保证计算图执行始于\code{Source}节点，终于\code{Sink}节点。
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/cc-non-empty-graph.png}
 \caption{非空图}
@@ -1216,7 +1216,7 @@ const Edge* Graph::AddControlEdge(Node* src, Node* dst) {
 
 同样地，\code{OpDef}仓库在\ascii{C++}系统\code{main}函数启动之前完成\code{OpDef}的加载和注册。它使用\ascii{REGISTER\_OP}宏完成\ascii{OpDef}的注册。
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/cc-op-repo.png}
 \caption{OpDef注册：使用REGISTER\_OP}
@@ -1229,7 +1229,7 @@ const Edge* Graph::AddControlEdge(Node* src, Node* dst) {
 
 \begin{content}
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/py-graph-creation.png}
 \caption{图的序列化与反序列化}
