@@ -42,141 +42,141 @@
 
 \end{content}
 
-\section*{英语术语}
+% \section*{英语术语}
 
-\begin{content}
+% \begin{content}
 
-因为我所撰写的文章，是供相关专业人士阅读，而非科普读物，因此在书中保留专业领域中朗朗上口的英语术语，故意不做翻译。例如，书中直接使用\ascii{OP}的术语，而不是将其翻译为「操作」。
+% 因为我所撰写的文章，是供相关专业人士阅读，而非科普读物，因此在书中保留专业领域中朗朗上口的英语术语，故意不做翻译。例如，书中直接使用\ascii{OP}的术语，而不是将其翻译为「操作」。
 
-但是，这会造成大面积的中英混杂的表达方式。幸运的是，绝对部分所使用的英语术语都是名词，极少出现动词或者形容词。但是，无论如何都不会丢失原本的主体语义和逻辑。
+% 但是，这会造成大面积的中英混杂的表达方式。幸运的是，绝对部分所使用的英语术语都是名词，极少出现动词或者形容词。但是，无论如何都不会丢失原本的主体语义和逻辑。
 
-万事都有例外，对于无歧义的，表达简短，且语义明确的术语，会使用中文术语表示。特殊地，对于中文术语表达存在歧义时，会同时标注中文术语和英语术语。例如，检查点(\ascii{Checkpoint})，协调器(\ascii{Coordinator})。
+% 万事都有例外，对于无歧义的，表达简短，且语义明确的术语，会使用中文术语表示。特殊地，对于中文术语表达存在歧义时，会同时标注中文术语和英语术语。例如，检查点(\ascii{Checkpoint})，协调器(\ascii{Coordinator})。
 
-一般地，无歧义的中文术语表定义在\reftbl{glossary}。
+% 一般地，无歧义的中文术语表定义在\reftbl{glossary}。
 
-\begin{table}[!htb]
-\resizebox{0.95\textwidth}{!} {
-\begin{tabular*}{1.2\textwidth}{@{}ll@{}}
-\toprule
-\ascii{英文} & \ascii{中文} \\
-\midrule
-\ascii{Variable} & \ascii{变量，参数} \\
-\ascii{Session} & \ascii{会话} \\ 
-\ascii{Device} & \ascii{设备} \\ 
-\bottomrule
-\end{tabular*}
-}
-\caption{规范约定}
-\label{tbl:glossary}
-\end{table}
+% \begin{table}[!htb]
+% \resizebox{0.95\textwidth}{!} {
+% \begin{tabular*}{1.2\textwidth}{@{}ll@{}}
+% \toprule
+% \ascii{英文} & \ascii{中文} \\
+% \midrule
+% \ascii{Variable} & \ascii{变量，参数} \\
+% \ascii{Session} & \ascii{会话} \\ 
+% \ascii{Device} & \ascii{设备} \\ 
+% \bottomrule
+% \end{tabular*}
+% }
+% \caption{规范约定}
+% \label{tbl:glossary}
+% \end{table}
 
-\end{content}
+% \end{content}
 
-\section*{代码重构}
+% \section*{代码重构}
 
-\begin{content}
+% \begin{content}
 
-在\ascii{IDE}里阅读代码，可以借助于上下文信息协助程序员阅读代码。但在书中展示的源代码，由于篇幅受限，再加之缺乏上下文的缘故，代码阅读的效果将大大折扣。
+% 在\ascii{IDE}里阅读代码，可以借助于上下文信息协助程序员阅读代码。但在书中展示的源代码，由于篇幅受限，再加之缺乏上下文的缘故，代码阅读的效果将大大折扣。
 
-一般地，为了更好地协助读者加快代码理解的速度和质量，常见的办法包括代码批注，内容讲解，算法描述，数据结构描述。但在作者的价值观中，与其批注过多的代码注释，不如重构代码，让代码直接表达语义。因此在本书中，作者另辟蹊径，尝试局部的代码重构，增加代码的可理解性。
+% 一般地，为了更好地协助读者加快代码理解的速度和质量，常见的办法包括代码批注，内容讲解，算法描述，数据结构描述。但在作者的价值观中，与其批注过多的代码注释，不如重构代码，让代码直接表达语义。因此在本书中，作者另辟蹊径，尝试局部的代码重构，增加代码的可理解性。
 
-例如，在\code{distributed\_runtime/master.cc}中，存在如下代码片段，上半部分的语义就是按照\code{session\_handle}线性查找相应的\code{MasterSession}示例。
+% 例如，在\code{distributed\_runtime/master.cc}中，存在如下代码片段，上半部分的语义就是按照\code{session\_handle}线性查找相应的\code{MasterSession}示例。
 
-\begin{leftbar}
-\begin{c++}
-void Master::ExtendSession(
-    const ExtendSessionRequest* req,
-    ExtendSessionResponse* resp, MyClosure done) {
-  // Find master session by session handle.
-  mu_.lock();
-  MasterSession* session = nullptr;
-  session = gtl::FindPtrOrNull(sessions_, req->session_handle());
-  if (session == nullptr) {
-    mu_.unlock();
-    done(errors::Aborted(
-         "Session ", req->session_handle(), " is not found."));
-    return;
-  }
-  session->Ref();
-  mu_.unlock();
+% \begin{leftbar}
+% \begin{c++}
+% void Master::ExtendSession(
+%     const ExtendSessionRequest* req,
+%     ExtendSessionResponse* resp, MyClosure done) {
+%   // Find master session by session handle.
+%   mu_.lock();
+%   MasterSession* session = nullptr;
+%   session = gtl::FindPtrOrNull(sessions_, req->session_handle());
+%   if (session == nullptr) {
+%     mu_.unlock();
+%     done(errors::Aborted(
+%          "Session ", req->session_handle(), " is not found."));
+%     return;
+%   }
+%   session->Ref();
+%   mu_.unlock();
 
-  SchedClosure([session, req, resp, done]() {
-    Status status = ValidateExternalGraphDefSyntax(req->graph_def());
-    if (status.ok()) {
-      status = session->Extend(req, resp);
-    }
-    session->Unref();
-    done(status);
-  });
-}
+%   SchedClosure([session, req, resp, done]() {
+%     Status status = ValidateExternalGraphDefSyntax(req->graph_def());
+%     if (status.ok()) {
+%       status = session->Extend(req, resp);
+%     }
+%     session->Unref();
+%     done(status);
+%   });
+% }
 
-void Master::PartialRunSetup(
-    const PartialRunSetupRequest* req,
-    PartialRunSetupResponse* resp, MyClosure done) {
-  // Find master session by session handle.
-  mu_.lock();
-  MasterSession* session = nullptr;
-  session = gtl::FindPtrOrNull(sessions_, req->session_handle());
-  if (session == nullptr) {
-    mu_.unlock();
-    done(errors::Aborted(
-         "Session ", req->session_handle(), " is not found."));
-    return;
-  }
-  session->Ref();
-  mu_.unlock();
+% void Master::PartialRunSetup(
+%     const PartialRunSetupRequest* req,
+%     PartialRunSetupResponse* resp, MyClosure done) {
+%   // Find master session by session handle.
+%   mu_.lock();
+%   MasterSession* session = nullptr;
+%   session = gtl::FindPtrOrNull(sessions_, req->session_handle());
+%   if (session == nullptr) {
+%     mu_.unlock();
+%     done(errors::Aborted(
+%          "Session ", req->session_handle(), " is not found."));
+%     return;
+%   }
+%   session->Ref();
+%   mu_.unlock();
 
-  SchedClosure([this, session, req, resp, done]() {
-    Status s = session->PartialRunSetup(req, resp);
-    session->Unref();
-    done(s);
-  });
-}
-\end{c++}
-\end{leftbar}
+%   SchedClosure([this, session, req, resp, done]() {
+%     Status s = session->PartialRunSetup(req, resp);
+%     session->Unref();
+%     done(s);
+%   });
+% }
+% \end{c++}
+% \end{leftbar}
 
-如果在此处尝试提取函数，直接地表达原有的语义。重构后的效果，不仅删除了冗余的注释，增强了代码的可理解性，而且间接消除了两者之间的重复代码。当然，为了保证本书中的代码示例与社区代码仓库的一致，作者会争取将重构后的代码合入\ascii{master}分支。
+% 如果在此处尝试提取函数，直接地表达原有的语义。重构后的效果，不仅删除了冗余的注释，增强了代码的可理解性，而且间接消除了两者之间的重复代码。当然，为了保证本书中的代码示例与社区代码仓库的一致，作者会争取将重构后的代码合入\ascii{master}分支。
 
-\begin{leftbar}
-\begin{c++}
-void Master::ExtendSession(
-    const ExtendSessionRequest* req,
-    ExtendSessionResponse* resp, MyClosure done) {
-  auto session = FindMasterSession(req->session_handle());
-  if (session == nullptr) {
-    done(AbortedError(req));
-    return;
-  }
+% \begin{leftbar}
+% \begin{c++}
+% void Master::ExtendSession(
+%     const ExtendSessionRequest* req,
+%     ExtendSessionResponse* resp, MyClosure done) {
+%   auto session = FindMasterSession(req->session_handle());
+%   if (session == nullptr) {
+%     done(AbortedError(req));
+%     return;
+%   }
 
-  SchedClosure([session, req, resp, done]() {
-    Status status = ValidateExternalGraphDefSyntax(req->graph_def());
-    if (status.ok()) {
-      status = session->Extend(req, resp);
-    }
-    session->Unref();
-    done(status);
-  });
-}
+%   SchedClosure([session, req, resp, done]() {
+%     Status status = ValidateExternalGraphDefSyntax(req->graph_def());
+%     if (status.ok()) {
+%       status = session->Extend(req, resp);
+%     }
+%     session->Unref();
+%     done(status);
+%   });
+% }
 
-void Master::PartialRunSetup(
-    const PartialRunSetupRequest* req,
-    PartialRunSetupResponse* resp, MyClosure done) {
-  auto session = FindMasterSession(req->session_handle());
-  if (session == nullptr) {
-    done(AbortedError(req));
-    return;
-  }
+% void Master::PartialRunSetup(
+%     const PartialRunSetupRequest* req,
+%     PartialRunSetupResponse* resp, MyClosure done) {
+%   auto session = FindMasterSession(req->session_handle());
+%   if (session == nullptr) {
+%     done(AbortedError(req));
+%     return;
+%   }
 
-  SchedClosure([this, session, req, resp, done]() {
-    Status s = session->PartialRunSetup(req, resp);
-    session->Unref();
-    done(s);
-  });
-}
-\end{c++}
-\end{leftbar}
+%   SchedClosure([this, session, req, resp, done]() {
+%     Status s = session->PartialRunSetup(req, resp);
+%     session->Unref();
+%     done(s);
+%   });
+% }
+% \end{c++}
+% \end{leftbar}
 
-\end{content}
+% \end{content}
 
 \section*{在线帮助}
 
