@@ -5,12 +5,12 @@ Licensed under [MIT License][].
 ## Download PDF
 
 ```bash
-$ wget -c https://raw.github.com/horance-liu/tensorflow-internals/master/tensorflow-internals.pdf
+$ wget -c https://gitlab.com/horance/tensorflow-internals/blob/master/tensorflow-internals.pdf
 ```
 
 ## Downloads
 
-You can obtain full latex source files of C++ Programming Style from [https://github.com/horance-liu/tensorflow-internals](https://github.com/horance-liu/tensorflow-internals)
+You can obtain full latex source files of TensorFlow Internals from [https://gitlab.com/horance/tensorflow-internals](https://gitlab.com/horance/tensorflow-internals)
 
 ## Install Tex
 
