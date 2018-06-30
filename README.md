@@ -26,26 +26,32 @@ Download [CTEX-full](http://www.ctex.org/CTeXDownload), and install it.
 
 ## Install Missing Fonts
 
-Then you should install some missing chinese fonts.
+Then you should install some missing chinese fonts. Please download missing fonts from Gitlab.
+
+```
+$ git clone https://gitlab.com/horance/fonts.git
+```
+
+Then install all missing fonts.
 
 - Ubuntu
 
 ```bash
-$ sudo mkdir /usr/local/share/fonts/truetype
-$ sudo cp -R fonts /usr/local/share/fonts/truetype
-$ cd /usr/local/share/fonts/truetype
-$ sudo mv fonts win-fonts
-$ sudo chown -R root win-fonts
+$ sudo cp fonts/* /usr/local/share/fonts
 $ sudo fc-cache
 ```
 
 - MacOS 
     
-Import all missing fonts into fontbook
+Import all missing fonts into fontbook, then cache all fonts.
+
+```bash
+$ sudo fc-cache
+```
 
 - Windows
  
-Copy the all missing fonts into C:/WINDOWS/Fonts
+Copy the all missing fonts into C:/WINDOWS/Fonts, then cache all fonts.
 
 ```bash
 $ fc-cache
@@ -57,12 +63,27 @@ $ fc-cache
 $ make
 ```
 
+if you happen to Error begin with `?`, then press `Ctrl + R` and `Enter` to continue.
+
 ## Preview PDF
+
+- Mac OSX
 
 ```bash
 $ open output/tensorflow-internals.pdf
 ```
 
+- Ubuntu
+
+```bash
+$ okular output/tensorflow-internals.pdf
+```
+
+- Windows
+
+open the file from directory `tensorflow-internals/output`.
+
 ## License
 
 [MIT License](http://opensource.org/licenses/mit-license.html) 
+
