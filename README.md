@@ -2,12 +2,6 @@
 
 Licensed under [MIT License][].
 
-## Download PDF
-
-```bash
-$ wget -c https://gitlab.com/horance/tensorflow-internals/blob/master/tensorflow-internals.pdf
-```
-
 ## Downloads
 
 You can obtain full latex source files of TensorFlow Internals from [https://gitlab.com/horance/tensorflow-internals](https://gitlab.com/horance/tensorflow-internals)
