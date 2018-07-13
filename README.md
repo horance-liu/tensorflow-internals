@@ -1,6 +1,6 @@
 # TensorFlow Internals.
 
-Licensed under [MIT License][].
+It is open source ebook about TensorFlow kernel and implementation mechanism, including programming model, computation graph, distributed training for machine learning.
 
 ## Downloads
 
@@ -63,7 +63,7 @@ $ fc-cache
 $ make
 ```
 
-if you happen to Error begin with `?`, then press `Ctrl + R` and `Enter` to continue.
+if you happen to Error begin with `?`, then press `R`(not `r`) and `Enter` to continue.
 
 ## Preview PDF
 
@@ -77,6 +77,12 @@ $ open output/tensorflow-internals.pdf
 
 ```bash
 $ okular output/tensorflow-internals.pdf
+```
+
+if no okular installed, please install it.
+
+```bash
+$ sudo apt-get install okular
 ```
 
 - Windows
