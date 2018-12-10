@@ -6,7 +6,7 @@ It is open source ebook about TensorFlow kernel and implementation mechanism, in
 
 You can obtain full latex source files of TensorFlow Internals from [https://gitlab.com/horance/tensorflow-internals](https://gitlab.com/horance/tensorflow-internals)
 
-## Install Tex
+## Install TeX distribution
 
 You should install full texlive packages.
 
@@ -22,7 +22,7 @@ Download [MacTeX.pkg](http://tug.org/mactex/), and install it.
 
 - Windowns
       
-Download [CTEX-full](http://www.ctex.org/CTeXDownload), and install it.
+Download [TeX Live](http://tug.org/texlive/), and install it (see [insruction](https://liam.page/texlive)).
 
 ## Install Missing Fonts
 
