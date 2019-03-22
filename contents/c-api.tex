@@ -383,7 +383,7 @@ Status NewSession(const SessionOptions& options, Session** out_session) {
 
 \begin{content}
 
-在既有的接口实现中，需要将图构造期构造好的图序列化，并传递给后端\ascii{C++}系统。而在新的接口实现中，无需实现图的创建或扩展。因为在创建\ascii{OP}时，节点实时添加至后端\ascii{C++}系统的图实例中。但是，既有接口实现，对于理解系统行为较为重要，在次做简单地阐述。
+在既有的接口实现中，需要将图构造期构造好的图序列化，并传递给后端\ascii{C++}系统。而在新的接口实现中，无需实现图的创建或扩展。因为在创建\ascii{OP}时，节点实时添加至后端\ascii{C++}系统的图实例中。但是，既有接口实现，对于理解系统行为较为重要，在此做简单地阐述。
 
 \ascii{Python}前端将迭代调用\code{Session.run}接口，将构造好的计算图，以\code{GraphDef}的形式发送给\cpp{}后端。其中，前端每次调用\code{Session.run}接口时，都会试图将新增节点的计算图发送给后端系统，以便将新增节点的计算图\ascii{Extend}到原来的计算图中。特殊地，在首次调用\code{Session.run}时，将发送整个计算图给后端系统。
 
