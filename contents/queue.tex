@@ -289,3 +289,5 @@ class QueueRunner(object):
 \subsection{关闭队列}
 
 当队列被关闭后，对于任何尝试\code{Enqueue}将会产生错误。但是，对于任何尝试\code{Dequeue}依然是成功的，只要队列中遗留元素；否则，\code{Dequeue}将立即失败，抛出\code{OutOfRangeError}异常，而不会阻塞等待更多元素被入队。
+
+\end{content}

@@ -534,7 +534,7 @@ Hello, TensorFlow!
 
 创建一个\ascii{Eclipse C++}工程，如\refig{setup-eclipse}所示。确定唯一的项目名称，手动地指定\ascii{TensorFlow}源代码的根目录，并选择\ascii{Makefile}的空工程。然后，按照\ascii{Properties > C/C++ General > Paths and Symbols > Includes}配置头文件的搜索目录。
 
-\begin{table}[!htbl]
+\begin{table}[!htbp]
 \resizebox{0.95\textwidth}{!} {
 \begin{tabular*}{1.2\textwidth}{@{}ll@{}}
 \toprule
@@ -549,10 +549,10 @@ Hello, TensorFlow!
 \label{tbl:tf-includes}
 \end{table}
 
-\begin{figure}[!htbl]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.75\textwidth]{figures/setup-eclipse.png}
-\caption{创建Eclipse C++工程}}
+\caption{创建Eclipse C++工程}
  \label{fig:setup-eclipse}
 \end{figure}
 
@@ -560,7 +560,7 @@ Hello, TensorFlow!
 
 不幸的是，\ascii{Eigen}对外公开的头文件缺少\code{.h}的后缀名，\ascii{CDT}无法解析相关的符号。请参阅\code{\href{http://eigen.tuxfamily.org/index.php?title=IDEs}{http://eigen.tuxfamily.org/index.php?title=IDEs}}相关说明，按照\ascii{Preferences > C/C++ > Coding Style > Organize Includes > Header Substitution}导入\code{eigen-header-substitution.xml}文件，如\refig{eclipse-eigen3}所示。
 
-\begin{figure}[!htbl]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.75\textwidth]{figures/eclipse-eigen3.png}
 \caption{替换\ascii{Eigen}的头文件}
@@ -586,7 +586,7 @@ Hello, TensorFlow!
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.7\textwidth]{figures/tf-stack.png}
-\caption{TensorFlow技术栈}}
+\caption{TensorFlow技术栈}
  \label{fig:tf-stack}
 \end{figure}
 

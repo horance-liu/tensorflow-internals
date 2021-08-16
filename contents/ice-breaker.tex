@@ -51,8 +51,6 @@
 
 \subsection{图示说明}
 
-\begin{content}
-
 为了更好地可视化整个训练过程，使用\ascii{matplotlib}工具包绘制了\ascii{5}种类型的画板。如\refig{mnist-training-digits}所示，表示一个\ascii{mini-batch}的训练样本数据集。其中，\code{batch\_size = 100}，白色背景表示数字被正确识别；而红色背景表示数字被误分类，手写数字的左侧标识了正确的标签值，而右侧标识了错误的预测值。
 
 \ascii{MNIST}拥有\ascii{50000}个训练样本，如果\code{batch\_size}为\ascii{100}，则需要迭代\ascii{500}次才能完整地遍历一次训练样本数据集，常称为一个\ascii{epoch}周期。
@@ -414,21 +412,21 @@ with tf.Session() as sess:
 为了形式化地描述多层感知器模型，此处定义了一些常用符号。
 
 \begin{itemize}
-   \item \alert{$ {n_{\ell}} $}: 网络层数，其中第$0$层为输入层，第$n_{\ell}$层为输出层
-   \item \alert{$ {s_{\ell}} $}: 第$\ell$层的节点数，$ \ell = 0, 1, ..., n_{\ell} $
-   \item \alert{$ w_{ji}^{(\ell)} $}: 第$(\ell-1)$层节点$i$与第$\ell$层节点$j$之间的权重，$ \ell = 1, ..., n_{\ell} $
-   \item \alert{$ b_i^{(\ell)} $}: 第$\ell$层节点$i$的偏置项，$ \ell = 1, ..., n_{\ell} $
-   \item \alert{$ a_i^{(\ell)} $}: 第$\ell$层节点$i$的输出，$ \ell = 1, ..., n_{\ell}, x = a^{(0)}, y = a^{(n_{\ell})} $
-   \item \alert{$ z_i^{(\ell)} $}: 第$\ell$层节点$i$的权重和，$ \ell = 1, ..., n_{\ell} $
-   \item \alert{$ \delta _i^{(\ell)} $}: 第$\ell$层节点$i$的误差项，$ \ell = 1, ..., n_{\ell} $
-   \item \alert{$ S = \{ ({x^{(t)}},{y^{(t)}});t = 1,2,...,m\} $}: 样本空间
+   \item $ {n_{\ell}} $: 网络层数，其中第$0$层为输入层，第$n_{\ell}$层为输出层
+   \item $ {s_{\ell}} $: 第$\ell$层的节点数，$ \ell = 0, 1, ..., n_{\ell} $
+   \item $ w_{ji}^{(\ell)} $: 第$(\ell-1)$层节点$i$与第$\ell$层节点$j$之间的权重，$ \ell = 1, ..., n_{\ell} $
+   \item $ b_i^{(\ell)} $: 第$\ell$层节点$i$的偏置项，$ \ell = 1, ..., n_{\ell} $
+   \item $ a_i^{(\ell)} $: 第$\ell$层节点$i$的输出，$ \ell = 1, ..., n_{\ell}, x = a^{(0)}, y = a^{(n_{\ell})} $
+   \item $ z_i^{(\ell)} $: 第$\ell$层节点$i$的权重和，$ \ell = 1, ..., n_{\ell} $
+   \item $ \delta _i^{(\ell)} $: 第$\ell$层节点$i$的误差项，$ \ell = 1, ..., n_{\ell} $
+   \item $ S = \{ ({x^{(t)}},{y^{(t)}});t = 1,2,...,m\} $: 样本空间
  \end{itemize}
 
 \subsubsection{前向传播}
 
 $z^{(\ell )}$表示$\ell$层的线性加权和，它由第$\ell - 1$层的输出$a^{(\ell  - 1)}$与第$\ell$层的权重矩阵$w^{(\ell )}$相乘，再加上第$\ell$层的偏置向量所得。
 
-推而广之，第$\ell$层的输出，由激活函数$f({z^{(\ell )}})$所得。其中，$a^{(0)}} = x, y = {a^{({n_\ell })}}$。
+推而广之，第$\ell$层的输出，由激活函数$f({z^{(\ell )}})$所得。其中，$a^{(0)} = x, y = {a^{({n_\ell })}}$。
 
 \[\begin{gathered}
   {z^{(\ell )}} = {w^{(\ell )}}{a^{(\ell  - 1)}} + {b^{(\ell )}} \hfill \\
@@ -804,7 +802,7 @@ with tf.Session() as sess:
 
 $Z^{(\ell )}$表示$\ell$层的线性加权和，它由第$\ell - 1$层的输出$A^{(\ell  - 1)}$与第$\ell$层的权重矩阵$W^{(\ell )}$卷积，再加上第$\ell$层的偏置向量所得。
 
-推而广之，第$\ell$层的输出，由激活函数$f({Z^{(\ell )}})$所得。其中，$A^{(0)}} = x, y = {A^{({n_\ell })}}$。
+推而广之，第$\ell$层的输出，由激活函数$f({Z^{(\ell )}})$所得。其中，$A^{(0)} = x, y = {A^{({n_\ell })}}$。
 
 \[\begin{gathered}
   {Z^{(\ell )}} = {A^{(\ell  - 1)}} * {W^{(\ell )}} + {b^{(\ell )}} \hfill \\

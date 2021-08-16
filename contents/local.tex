@@ -47,7 +47,11 @@
 
 也就是说，分裂和执行体现了\tf{}并发执行的设计理念。
 
+\end{content}
+
 \section{会话控制}
+
+\begin{content}
 
 在本地模式下，其运行时由\code{DirectSession}控制。一般地，\code{DirectSession}执行计算图时，各组件之间都是函数调用关系。但是，\code{DirectSession}也存在清晰的生命周期管理机制，如\refig{local-direct-session-lifecycle}所示。
 
@@ -418,9 +422,12 @@ void FIFOQueue::TryEnqueue(const Tuple& tuple, OpKernelContext* ctx,
 \end{c++}
 \end{leftbar}
 
+\end{content}
 
 \section{剪枝}
 \label{sec:graph-operation-prune}
+
+\begin{content}
 
 \code{DirectSession::Run}执行时，首先完成\code{ClientGraph}的构造。事实上，\code{ClientGraph}的构造过程，主要完成\code{FullGraph}的剪枝算法，并生成\code{ClientGraph}。
 
@@ -850,6 +857,8 @@ void PruneForTargets(Graph* g,
 }
 \end{c++}
 \end{leftbar}
+
+\end{content}
 
 \section{分裂}
 \label{sec:graph-operation-split}
