@@ -387,3 +387,5 @@ private:
 同样的道理，下游\ascii{OP}从队列(文件名队列)中出队元素，一旦该队列元素为空，则自动抛出\code{OutOfRangeError}异常。该阶段对应的\code{QueueRunner}将感知该异常的发生，然后捕获异常并关闭下游的队列(样本队列)，退出线程的执行。
 
 在\ascii{Pipeline}的最后阶段，\code{train\_op}从样本队列中出队批次训练样本时，队列为空，并且队列被关闭了，则抛出\code{OutOfRangeError}异常，最终停止整个训练任务。
+
+\end{content}
