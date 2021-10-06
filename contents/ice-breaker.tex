@@ -551,19 +551,19 @@ M = 60
 N = 30
 
 w1 = tf.Variable(tf.truncated_normal([28*28, K] ,stddev=0.1)) 
-b1 = tf.Variable(tf.ones([L])/10)
+b1 = tf.Variable(tf.ones([K])/10)
 
 w2 = tf.Variable(tf.truncated_normal([K, L], stddev=0.1))
 b2 = tf.Variable(tf.ones([L])/10)
 
 w3 = tf.Variable(tf.truncated_normal([L, M], stddev=0.1)) 
-b3 = tf.Variable(tf.ones([L])/10)
+b3 = tf.Variable(tf.ones([M])/10)
 
 w4 = tf.Variable(tf.truncated_normal([M, N], stddev=0.1)) 
-b4 = tf.Variable(tf.ones([L])/10)
+b4 = tf.Variable(tf.ones([N])/10)
 
 w5 = tf.Variable(tf.truncated_normal([N, 10], stddev=0.1)) 
-b5 = tf.Variable(tf.ones([L])/10)
+b5 = tf.Variable(tf.ones([10])/10)
 \end{python}
 \end{leftbar}
 
