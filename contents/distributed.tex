@@ -202,7 +202,7 @@ tf.train.ClusterSpec({
   ],  
   "ps": [
     "ps0:2222",       # /job:ps/task:0
-    "ps1:2222"        # /job:ps/task:0
+    "ps1:2222"        # /job:ps/task:1
   ]})
 \end{python}
 \end{leftbar}
@@ -3650,7 +3650,7 @@ void GraphMgr::StartParallelExecutors(
       &thread::ThreadPool::Schedule, 
       worker_env_->compute_pool, _1);
 
-  2. Broadcast all partitions to run
+  // 2. Broadcast all partitions to run
   for (const auto& unit : item->units) {
     unit.root->RunAsync(args, barrier->Get());
   }
