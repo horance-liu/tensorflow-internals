@@ -62,7 +62,7 @@
 
 如\refig{local-direct-session-model}所示，\code{DirectSession}持有\code{SimpleGraphExecutionState}实例，后者负责计算图的剪枝，生成\code{ClientGraph}实例。
 
-\code{DirectSession}同时持有一组线程池，但是没次\code{DirectSession.run}时，根据外部配置的索引，从线程池组里选择其一为其提供服务。因为\code{DirectSession}是线程安全的，支持多个并发执行的\code{DirectSession.run}，即可以同时运行多个线程池实例。
+\code{DirectSession}同时持有一组线程池，但是每次\code{DirectSession.run}时，根据外部配置的索引，从线程池组里选择其一为其提供服务。因为\code{DirectSession}是线程安全的，支持多个并发执行的\code{DirectSession.run}，即可以同时运行多个线程池实例。
 
 \begin{figure}[H]
 \centering
